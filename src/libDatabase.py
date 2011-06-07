@@ -32,14 +32,15 @@ class Database:
                                                                                                  self.password));
             self.cursor = self.connection.cursor()
             print("Verbinding met database %s geslaagd." %(self.database))
-        except:
-            print("*** FOUT *** Verbinding met database %s niet geslaagd." %(self.database))
+        except (psycopg2.Error,), foutmelding:
+            print("*** FOUT *** Verbinding met database %s niet geslaagd. %s" %(self.database, foutmelding))
             print("")
             raw_input("Druk <enter> om af te sluiten")
             sys.exit()
 
     # Maak van de datum/tijdstip string in de BAG een datumwaarde voor in de database 
     def datum(self, tekst):
+        # TODO: Echte datum functie toepassen.
         if tekst == '':
             return "2299-12-31"
         else:
@@ -47,6 +48,7 @@ class Database:
 
     # Geef de waarde in de vorm waarin het kan worden ingevoegd in de database
     def string(self, tekst):
+        # TODO: Controleren of deze functie obsolete kan worden als psycopg2 goed wordt gebruikt!
         # Vervang een ' in een string door ''
         # Vervang een \n door een spatie
         # Vervang een \ door \\
@@ -92,14 +94,14 @@ class Database:
 
     def execute(self, sql, parameters=None):
         try:
-            if self.parameters:
+            if parameters:
                 self.cursor.execute(sql, parameters)
             else:
                 self.cursor.execute(sql, parameters)
             self.connection.commit()
             return self.cursor.rowcount
         except (psycopg2.Error,), foutmelding:
-            #TODO: rollback uitvoeren bij INSERT!
+            # TODO: rollback uitvoeren bij INSERT!
             log("*** FOUT *** Kan SQL-statement '%s' niet uitvoeren:\n %s" %(sql, foutmelding))
             return False
 
@@ -128,7 +130,7 @@ class Database:
         self.controleerOfMaakLog()
         dt = datetime.datetime.now()
         sql  = "INSERT INTO BAGextractpluslog (datum, actie, bestand, logfile) VALUES (%s, %s, %s, %s);"
-        parameters = (dt.date(), actie, self.string(bestand), self.string(logfile))
+        parameters = (dt.date(), str(actie), str(bestand), str(logfile))
         self.execute(sql, parameters)
         
     def getLog(self):
@@ -140,9 +142,9 @@ class Database:
         return rows
 
     def controleerTabel(self, tabel):
-        sql = "SELECT tablename FROM pg_tables WHERE tablename = '%s';"
-        parameters = (tabel)
-        self.cursor.execute(sql,parameters)
+        sql = "SELECT tablename FROM pg_tables WHERE tablename = %s;"
+        parameters = (tabel,)
+        self.cursor.execute(sql, parameters)
         rows = self.cursor.fetchall()
         self.connection.commit()
         if len(rows) == 0:
