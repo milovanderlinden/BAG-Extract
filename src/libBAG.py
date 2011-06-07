@@ -380,7 +380,8 @@ class BAGobject:
         database.maakTabel(self.naam(), sql)
 
         if self.heeftGeometrie():
-            database.execute("SELECT AddGeometryColumn('public', '" + self.naam().lower() + "', 'geometrie', 28992, '" + self.geometrie().soort() + "', " + str(self.geometrie().dimensie()) + ")")
+            inhoud = (self.naam().lower(), self.geometrie().soort(), self.geometrie().dimensie(),)
+            database.execute("SELECT AddGeometryColumn('public', %s, 'geometrie', 28992, %s, %s)", inhoud)
 
     # Controleer of een tabel bestaat in de database
     def controleerTabel(self):
@@ -465,22 +466,28 @@ class BAGobject:
     def voegToeInDatabase(self):
         velden  = ""
         waardes = ""
+        inhoud  = []
         for attribuut in self.attributen:
             if attribuut.enkelvoudig():
                 if velden == "":
                     velden  = "(" + attribuut.naam()
-                    waardes = "('" + database.string(attribuut.waarde()) + "'" 
+                    waardes = "(%s" 
+                    inhoud.append(attribuut.waarde())
                 else:
                     velden  += "," + attribuut.naam()
-                    waardes += ",'" + database.string(attribuut.waarde()) + "'"
+                    waardes += ", %s"
+                    inhoud.append(attribuut.waarde())
         if self.heeftGeometrie():
             velden  += ",geometrie"
-            waardes += ",GeomFromEWKT('SRID=28992;" + self.geometrie().waarde() + "')" 
+            waardes += ",GeomFromEWKT(%s)"
+            inhoud.append('SRID=28992;'+self.geometrie().waarde())
         velden  += ",begindatum,einddatum)"
-        waardes += ",'" + database.datum(self.begindatumTijdvakGeldigheid.waarde()) + "'"
-        waardes += ",'" + database.datum(self.einddatumTijdvakGeldigheid.waarde()) + "')"
+        waardes += ", %s"
+        waardes += ", %s)"
+        inhoud.append(database.datum(self.begindatumTijdvakGeldigheid.waarde()))
+        inhoud.append(database.datum(self.einddatumTijdvakGeldigheid.waarde()))
         sql = "INSERT INTO " + self.naam() + " " + velden + " VALUES " + waardes
-        database.insert(sql, self.identificatie.waarde())
+        database.insert(sql, tuple(inhoud), self.identificatie.waarde(),)
 
         for attribuut in self.attributen:
             if not attribuut.enkelvoudig():
@@ -491,14 +498,13 @@ class BAGobject:
                     sql += ",aanduidingrecordcorrectie"
                     sql += ",begindatumtijdvakgeldigheid"
                     sql += "," + attribuut.naam()
-                    sql += ") VALUES "
-                    sql += "('" + database.string(self.identificatie.waarde()) + "'"
-                    sql += ",'" + database.string(self.aanduidingRecordInactief.waarde()) + "'"
-                    sql += ",'" + database.string(self.aanduidingRecordCorrectie.waarde()) + "'"
-                    sql += ",'" + database.string(self.begindatumTijdvakGeldigheid.waarde()) + "'"
-                    sql += ",'" + waarde + "'"
-                    sql += ")"
-                    database.insert(sql, self.identificatie.waarde())
+                    sql += ") VALUES (%s, %s, %s, %s, %s)"
+                    inhoud = (self.identificatie.waarde(), \
+                              self.aanduidingRecordInactief.waarde(), \
+                              self.aanduidingRecordCorrectie.waarde(), \
+                              self.begindatumTijdvakGeldigheid.waarde(), \
+                              waarde,)
+                    database.insert(sql, inhoud, self.identificatie.waarde())
 
     # Update het object in de database.
     # Alleen de volgende attributen kunnen hierbij wijzigen
@@ -507,15 +513,23 @@ class BAGobject:
     #        - aanduidingRecordCorrectie
     def wijzigInDatabase(self, wijziging):
         sql  = "UPDATE " + self.naam() 
-        sql += "   SET einddatumtijdvakgeldigheid  = '" + database.string(wijziging.einddatumTijdvakGeldigheid.waarde()) + "'"
-        sql += "     , einddatum                   = '" + database.datum(wijziging.einddatumTijdvakGeldigheid.waarde()) + "'"
-        sql += "     , aanduidingrecordinactief    = '" + database.string(wijziging.aanduidingRecordInactief.waarde()) + "'"
-        sql += "     , aanduidingrecordcorrectie   = '" + database.string(wijziging.aanduidingRecordCorrectie.waarde()) + "'"
-        sql += " WHERE identificatie               = '" + database.string(self.identificatie.waarde()) + "'"
-        sql += "   AND aanduidingrecordinactief    = '" + database.string(self.aanduidingRecordInactief.waarde()) + "'"
-        sql += "   AND aanduidingrecordcorrectie   = '" + database.string(self.aanduidingRecordCorrectie.waarde()) + "'"
-        sql += "   AND begindatumtijdvakgeldigheid = '" + database.string(self.begindatumTijdvakGeldigheid.waarde()) + "'"
-        database.execute(sql)
+        sql += "   SET einddatumtijdvakgeldigheid  = %s"
+        sql += "     , einddatum                   = %s"
+        sql += "     , aanduidingrecordinactief    = %s"
+        sql += "     , aanduidingrecordcorrectie   = %s"
+        sql += " WHERE identificatie               = %s"
+        sql += "   AND aanduidingrecordinactief    = %s"
+        sql += "   AND aanduidingrecordcorrectie   = %s"
+        sql += "   AND begindatumtijdvakgeldigheid = %s"
+        inhoud = (wijziging.einddatumTijdvakGeldigheid.waarde(), \
+                  database.datum(wijziging.einddatumTijdvakGeldigheid.waarde()), \
+                  wijziging.aanduidingRecordInactief.waarde(), \
+                  wijziging.aanduidingRecordCorrectie.waarde(), \
+                  self.identificatie.waarde(), \
+                  self.aanduidingRecordInactief.waarde(), \
+                  self.aanduidingRecordCorrectie.waarde(), \
+                  self.begindatumTijdvakGeldigheid.waarde(),)
+        database.execute(sql, inhoud)
         if database.cursor.rowcount == 0:
             log("Waarschuwing: wijziging op niet bestaand voorkomen van " + self.naam() + " " + self.identificatie.waarde() + " niet uitgevoerd.") 
 
@@ -526,13 +540,19 @@ class BAGobject:
                 #        - aanduidingRecordInactief
                 #        - aanduidingRecordCorrectie
                 sql  = "UPDATE " + attribuut.relatieNaam() 
-                sql += "   SET aanduidingrecordinactief    = '" + database.string(wijziging.aanduidingRecordInactief.waarde()) + "'"
-                sql += "     , aanduidingrecordcorrectie   = '" + database.string(wijziging.aanduidingRecordCorrectie.waarde()) + "'"
-                sql += " WHERE identificatie               = '" + database.string(self.identificatie.waarde()) + "'"
-                sql += "   AND aanduidingrecordinactief    = '" + database.string(self.aanduidingRecordInactief.waarde()) + "'"
-                sql += "   AND aanduidingrecordcorrectie   = '" + database.string(self.aanduidingRecordCorrectie.waarde()) + "'"
-                sql += "   AND begindatumtijdvakgeldigheid = '" + database.string(self.begindatumTijdvakGeldigheid.waarde()) + "'"
-                database.execute(sql)
+                sql += "   SET aanduidingrecordinactief    = %s"
+                sql += "     , aanduidingrecordcorrectie   = %s"
+                sql += " WHERE identificatie               = %s"
+                sql += "   AND aanduidingrecordinactief    = %s"
+                sql += "   AND aanduidingrecordcorrectie   = %s"
+                sql += "   AND begindatumtijdvakgeldigheid = %s"
+                inhoud = (wijziging.aanduidingRecordInactief.waarde(), \
+                          wijziging.aanduidingRecordCorrectie.waarde(), \
+                          self.identificatie.waarde(), \
+                          self.aanduidingRecordInactief.waarde(), \
+                          self.aanduidingRecordCorrectie.waarde(), \
+                          self.begindatumTijdvakGeldigheid.waarde(),)
+                database.execute(sql, inhoud)
 
     # Initaliseer het object vanuit de database op basis van de sleutelvelden identificatie,
     # begindatum tijdvak geldigheid, aanduiding record inactief en aanduiding record correctie
@@ -545,11 +565,15 @@ class BAGobject:
                 else:
                     sql += "," + attribuut.naam()
         sql += "  FROM " + self.naam()
-        sql += " WHERE identificatie               = '" + self.identificatie.waarde() + "'"
-        sql += "   AND begindatumTijdvakGeldigheid = '" + self.begindatumTijdvakGeldigheid.waarde() + "'"
-        sql += "   AND aanduidingRecordInactief    = '" + self.aanduidingRecordInactief.waarde() + "'"
-        sql += "   AND aanduidingRecordCorrectie   = '" + self.aanduidingRecordCorrectie.waarde() + "'"
-        database.cursor.execute(sql)
+        sql += " WHERE identificatie               = %s"
+        sql += "   AND begindatumTijdvakGeldigheid = %s"
+        sql += "   AND aanduidingRecordInactief    = %s"
+        sql += "   AND aanduidingRecordCorrectie   = %s"
+        inhoud = (self.identificatie.waarde(), \
+                  self.begindatumTijdvakGeldigheid.waarde(), \
+                  self.aanduidingRecordInactief.waarde(), \
+                  self.aanduidingRecordCorrectie.waarde(),)
+        database.cursor.execute(sql, inhoud)
         if database.cursor.rowcount >= 1:
             rows = database.cursor.fetchall()
             i = 0
@@ -562,11 +586,15 @@ class BAGobject:
             if not attribuut.enkelvoudig():
                 sql  = "SELECT " + attribuut.naam()
                 sql += " FROM " + attribuut.relatieNaam()
-                sql += " WHERE identificatie               = '" + self.identificatie.waarde() + "'"
-                sql += "   AND begindatumTijdvakGeldigheid = '" + self.begindatumTijdvakGeldigheid.waarde() + "'"
-                sql += "   AND aanduidingRecordInactief    = '" + self.aanduidingRecordInactief.waarde() + "'"
-                sql += "   AND aanduidingRecordCorrectie   = '" + self.aanduidingRecordCorrectie.waarde() + "'"
-                database.cursor.execute(sql)
+                sql += " WHERE identificatie               = %s"
+                sql += "   AND begindatumTijdvakGeldigheid = %s"
+                sql += "   AND aanduidingRecordInactief    = %s"
+                sql += "   AND aanduidingRecordCorrectie   = %s"
+                inhoud = (self.identificatie.waarde(), \
+                          self.begindatumTijdvakGeldigheid.waarde(), \
+                          self.aanduidingRecordInactief.waarde(), \
+                          self.aanduidingRecordCorrectie.waarde(),)
+                database.cursor.execute(sql, inhoud)
                 rows = database.cursor.fetchall()
                 for row in rows:
                     attribuut.setWaarde(row[0])
@@ -578,8 +606,9 @@ class BAGobject:
         sql += "     , aanduidingRecordInactief"
         sql += "     , aanduidingRecordCorrectie"
         sql += " FROM " + self.naam() + "actueel"
-        sql += " WHERE identificatie = '" + self.identificatie.waarde() + "'"
-        database.cursor.execute(sql)
+        sql += " WHERE identificatie = %s"
+        inhoud = (self.identificatie.waarde(),)
+        database.cursor.execute(sql, inhoud)
         rows = database.cursor.fetchall()
         if len(rows) == 0:
             return False
@@ -600,9 +629,10 @@ class BAGobject:
         sql += "     , aanduidingRecordInactief"
         sql += "     , aanduidingRecordCorrectie"
         sql += " FROM " + self.naam()
-        sql += " WHERE identificatie = '" + self.identificatie.waarde() + "'"
+        sql += " WHERE identificatie = %s"
         sql += " ORDER BY begindatumTijdvakGeldigheid, aanduidingRecordCorrectie"
-        database.cursor.execute(sql)
+        inhoud = (self.identificatie.waarde(),)
+        database.cursor.execute(sql, inhoud)
         rows = database.cursor.fetchall()
         for row in rows:
             obj = getBAGobjectBijIdentificatie(self.identificatie.waarde())
@@ -812,13 +842,15 @@ class Nummeraanduiding(BAGobject):
         
         sql  = "SELECT DISTINCT identificatie"
         sql += "  FROM " + self.typeAdresseerbaarObject.waarde().lower() + "actueel"
-        sql += " WHERE hoofdadres = '" + self.identificatie.waarde() + "'"
-        database.cursor.execute(sql)
+        sql += " WHERE hoofdadres = %s"
+        inhoud = (self.identificatie.waarde(),)
+        database.cursor.execute(sql, inhoud)
         if database.cursor.rowcount == 0:
             sql  = "SELECT DISTINCT identificatie"
             sql += "  FROM adresseerbaarobjectnevenadres"
-            sql += " WHERE nevenadres = '" + self.identificatie.waarde() + "'"
-            database.cursor.execute(sql)
+            sql += " WHERE nevenadres = %s"
+            inhoud = (self.identificatie.waarde(),)
+            database.cursor.execute(sql, inhoud)
         if database.cursor.rowcount == 0:
             adresseerbaarObject = None
         elif database.cursor.rowcount > 0:
@@ -1075,8 +1107,9 @@ class Pand(BAGobject):
         
         sql  = "SELECT DISTINCT identificatie"
         sql += "  FROM verblijfsobjectpand" 
-        sql += " WHERE gerelateerdpand = '" + self.identificatie.waarde() + "'"
-        database.cursor.execute(sql)
+        sql += " WHERE gerelateerdpand = %s"
+        inhoud = (self.identificatie.waarde(),)
+        database.cursor.execute(sql, inhoud)
         for row in database.cursor.fetchall():
             verblijfsobject = Verblijfsobject()
             verblijfsobject.identificatie.setWaarde(row[0])

@@ -43,7 +43,7 @@ class Database:
         if tekst == '':
             return "2299-12-31"
         else:
-            return "%s%s%s%s-%s%s-%s%s" %(tekst[0],tekst[1],tekst[2],tekst[3],tekst[4],tekst[5],tekst[6],tekst[7])
+            return "%c%c%c%c-%c%c-%c%c" %(tekst[0],tekst[1],tekst[2],tekst[3],tekst[4],tekst[5],tekst[6],tekst[7])
 
     # Geef de waarde in de vorm waarin het kan worden ingevoegd in de database
     def string(self, tekst):
@@ -81,18 +81,18 @@ class Database:
     def maakIndex(self, naam, createSQL):
         return self.maakObject("Index", naam, "DROP INDEX %s" %(naam), createSQL)
 
-    def insert(self, sql, identificatie):
+    def insert(self, sql, parameters, identificatie):
         try:
-            self.cursor.execute(sql)
+            self.cursor.execute(sql, parameters)
         except (psycopg2.IntegrityError,), foutmelding:
             log("* Waarschuwing * Object %s niet opgeslagen: %s" %(identificatie, str(foutmelding)))
         except (psycopg2.Error,), foutmelding:
             log("*** FOUT *** Object %s niet opgeslagen: %s - %s" %(identificatie, str(foutmelding), sql))
         self.connection.commit()
 
-    def execute(self, sql):
+    def execute(self, sql, parameters=None):
         try:
-            self.cursor.execute(sql)
+            self.cursor.execute(sql, parameters)
             self.connection.commit()
             return self.cursor.rowcount
         except (psycopg2.Error,), foutmelding:
@@ -122,9 +122,9 @@ class Database:
             
     def log(self, actie, bestand, logfile):
         self.controleerOfMaakLog()
-        sql  = "INSERT INTO BAGextractpluslog (datum, actie, bestand, logfile)"
-        sql += " VALUES ('now', '%s', '%s', '%s')" %(actie, self.string(bestand), self.string(logfile))
-        self.execute(sql)
+        sql  = "INSERT INTO BAGextractpluslog (datum, actie, bestand, logfile) VALUES ('now', %s, %s, %s)"
+        inhoud = (actie, bestand, logfile,)
+        self.execute(sql, inhoud)
         
     def getLog(self):
         self.controleerOfMaakLog()
@@ -134,7 +134,7 @@ class Database:
         return rows
 
     def controleerTabel(self, tabel):
-        self.cursor.execute("SELECT tablename FROM pg_tables WHERE tablename = '%s'" %tabel)
+        self.cursor.execute("SELECT tablename FROM pg_tables WHERE tablename = %s", (tabel,))
         rows = self.cursor.fetchall()
         self.connection.commit()
         if len(rows) == 0:
