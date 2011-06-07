@@ -90,12 +90,16 @@ class Database:
             log("*** FOUT *** Object %s niet opgeslagen: %s - %s" %(identificatie, str(foutmelding), sql))
         self.connection.commit()
 
-    def execute(self, sql):
+    def execute(self, sql, parameters=None):
         try:
-            self.cursor.execute(sql)
+            if self.parameters:
+                self.cursor.execute(sql, parameters)
+            else:
+                self.cursor.execute(sql, parameters)
             self.connection.commit()
             return self.cursor.rowcount
         except (psycopg2.Error,), foutmelding:
+            #TODO: rollback uitvoeren bij INSERT!
             log("*** FOUT *** Kan SQL-statement '%s' niet uitvoeren:\n %s" %(sql, foutmelding))
             return False
 
@@ -122,19 +126,23 @@ class Database:
             
     def log(self, actie, bestand, logfile):
         self.controleerOfMaakLog()
-        sql  = "INSERT INTO BAGextractpluslog (datum, actie, bestand, logfile)"
-        sql += " VALUES ('now', '%s', '%s', '%s')" %(actie, self.string(bestand), self.string(logfile))
-        self.execute(sql)
+        dt = datetime.datetime.now()
+        sql  = "INSERT INTO BAGextractpluslog (datum, actie, bestand, logfile) VALUES (%s, %s, %s, %s);"
+        parameters = (dt.date(), actie, self.string(bestand), self.string(logfile))
+        self.execute(sql, parameters)
         
     def getLog(self):
         self.controleerOfMaakLog()
-        self.cursor.execute("SELECT * FROM BAGextractpluslog ORDER BY datum, logfile")
+        sql = "SELECT * FROM BAGextractpluslog ORDER BY datum, logfile"
+        self.cursor.execute(sql)
         rows = self.cursor.fetchall()
         self.connection.commit()
         return rows
 
     def controleerTabel(self, tabel):
-        self.cursor.execute("SELECT tablename FROM pg_tables WHERE tablename = '%s'" %tabel)
+        sql = "SELECT tablename FROM pg_tables WHERE tablename = '%s';"
+        parameters = (tabel)
+        self.cursor.execute(sql,parameters)
         rows = self.cursor.fetchall()
         self.connection.commit()
         if len(rows) == 0:
