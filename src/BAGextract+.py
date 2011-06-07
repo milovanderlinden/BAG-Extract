@@ -12,7 +12,7 @@
 #
 # Versie:       1.5
 #               - Bug (objectType not defined) gefixt in verwerking mutatiebestanden
-#               9 septembver 2010
+#               9 september 2010
 #
 # Versie:       1.3
 #               - Verwerking mutatiebestanden robuuster gemaakt voor geval van lege Mutatie-producten
