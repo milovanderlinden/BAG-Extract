@@ -37,8 +37,6 @@
 #
 # Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
 #------------------------------------------------------------------------------
-from xml.dom import minidom
-
 from libLog import *
 from libDatabase import *
 
