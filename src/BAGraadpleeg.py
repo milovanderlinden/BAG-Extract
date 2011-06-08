@@ -594,6 +594,7 @@ class BAGKaart(wx.Panel):
     # Toon van een gevonden BAG-object de geometrie in de kaart, tezamen met de geometrieen van
     # omliggende objecten.
     def toonGeometrie(self, BAGobject):
+        # TODO: Als het BAGobject NoneType is, afvangen en routine verlaten.
         if BAGobject.objectType() == "WPL":
             return
 
@@ -662,12 +663,10 @@ class BAGKaart(wx.Panel):
                     self.polygonen.append(polygoon)
 
             # Zoek de standplaatsen aan de openbare ruimte
-            sql  = "SELECT spl.standplaatsgeometrie "
-            sql += "  FROM standplaatsActueel spl"
-            sql += "     , nummeraanduidingActueel num"
-            sql += " WHERE num.gerelateerdeopenbareruimte = '" + self.BAGobject.identificatie.waarde() + "'"
-            sql += "   AND spl.hoofdadres = num.identificatie"
-            standplaatsen = database.select(sql)
+            sql  = "SELECT spl.standplaatsgeometrie FROM standplaatsActueel spl, nummeraanduidingActueel num"
+            sql += " WHERE num.gerelateerdeopenbareruimte = %s AND spl.hoofdadres = num.identificatie"
+            parameters(self.BAGobject.identificatie.waarde(),)
+            standplaatsen = database.select(sql, parameters)
             for standplaats in standplaatsen:
                 geometrie = standplaats[0]
                 if geometrie[:7].upper() == "POLYGON":

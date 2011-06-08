@@ -32,8 +32,8 @@ class Database:
                                                                                                  self.password));
             self.cursor = self.connection.cursor()
             print("Verbinding met database %s geslaagd." %(self.database))
-        except (psycopg2.Error,), foutmelding:
-            print("*** FOUT *** Verbinding met database %s niet geslaagd. %s" %(self.database, foutmelding))
+        except:
+            print("*** FOUT *** Verbinding met database %s niet geslaagd." %(self.database))
             print("")
             raw_input("Druk <enter> om af te sluiten")
             sys.exit()
@@ -44,7 +44,7 @@ class Database:
         if tekst == '':
             return "2299-12-31"
         else:
-            return "%s%s%s%s-%s%s-%s%s" %(tekst[0],tekst[1],tekst[2],tekst[3],tekst[4],tekst[5],tekst[6],tekst[7])
+            return "%c%c%c%c-%c%c-%c%c" %(tekst[0],tekst[1],tekst[2],tekst[3],tekst[4],tekst[5],tekst[6],tekst[7])
 
     # Geef de waarde in de vorm waarin het kan worden ingevoegd in de database
     def string(self, tekst):
@@ -83,9 +83,12 @@ class Database:
     def maakIndex(self, naam, createSQL):
         return self.maakObject("Index", naam, "DROP INDEX %s" %(naam), createSQL)
 
-    def insert(self, sql, identificatie):
+    def insert(self, sql, parameters=None, identificatie):
         try:
-            self.cursor.execute(sql)
+            if parameters:
+                self.cursor.execute(sql, parameters)
+            else:
+                self.cursor.execute(sql)
         except (psycopg2.IntegrityError,), foutmelding:
             log("* Waarschuwing * Object %s niet opgeslagen: %s" %(identificatie, str(foutmelding)))
         except (psycopg2.Error,), foutmelding:
@@ -97,7 +100,7 @@ class Database:
             if parameters:
                 self.cursor.execute(sql, parameters)
             else:
-                self.cursor.execute(sql, parameters)
+                self.cursor.execute(sql)
             self.connection.commit()
             return self.cursor.rowcount
         except (psycopg2.Error,), foutmelding:
@@ -142,7 +145,7 @@ class Database:
         return rows
 
     def controleerTabel(self, tabel):
-        sql = "SELECT tablename FROM pg_tables WHERE tablename = %s;"
+        sql = "SELECT tablename FROM pg_tables WHERE tablename = %s"
         parameters = (tabel,)
         self.cursor.execute(sql, parameters)
         rows = self.cursor.fetchall()

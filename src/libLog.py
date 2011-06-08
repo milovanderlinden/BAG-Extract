@@ -14,7 +14,6 @@
 #------------------------------------------------------------------------------
 import time, datetime
 import sys
-import wx
 
 from libBAGextractPlusVersie import *
 from libBAGconfiguratie import *
@@ -104,14 +103,16 @@ class Log:
             self.logfile.write("\n")
             self.logfile.flush()
 
-        self.bagextractplus = applicatie
-        self.cursor         = self.bagextractplus.GetCursor()
-        self.bagextractplus.SetCursor(wx.HOURGLASS_CURSOR)
-        for i in range(5):
-            self.bagextractplus.menuBalk.EnableTop(i, False)
-        self.bagextractplus.Refresh()
-        self.bagextractplus.Update()
-        self.bagextractplus.app.Yield(True)
+        if applicatie is not None:
+            import wx
+            self.bagextractplus = applicatie
+            self.cursor         = self.bagextractplus.GetCursor()
+            self.bagextractplus.SetCursor(wx.HOURGLASS_CURSOR)
+            for i in range(5):
+                self.bagextractplus.menuBalk.EnableTop(i, False)
+            self.bagextractplus.Refresh()
+            self.bagextractplus.Update()
+            self.bagextractplus.app.Yield(True)
                 
         self.starttime = 0
         database.log(actie, bestand, self.logfileNaam)
