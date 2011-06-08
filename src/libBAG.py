@@ -789,7 +789,7 @@ class Nummeraanduiding(BAGobject):
     def __init__(self):
         BAGobject.__init__(self)
         self.huisnummer                 = BAGattribuut( 5, "huisnummer", "bag_LVC:huisnummer")
-        self.huisletter                 = BAGattribuut( 5, "huisletter", "bag_LVC:huisletter")
+        self.huisletter                 = BAGattribuut( 1, "huisletter", "bag_LVC:huisletter")
         self.huisnummertoevoeging       = BAGattribuut( 4, "huisnummertoevoeging", "bag_LVC:huisnummertoevoeging")
         self.postcode                   = BAGattribuut( 6, "postcode", "bag_LVC:postcode")
         self.nummeraanduidingStatus     = BAGattribuut(80, "nummeraanduidingStatus", "bag_LVC:nummeraanduidingStatus")
