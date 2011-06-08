@@ -5,7 +5,8 @@
 #------------------------------------------------------------------------------
 
 
-import getopt, sys
+import getopt
+import sys
 from libLog import *
 from libDatabase import *
 from libBAG import *
@@ -41,7 +42,7 @@ def main():
     bagObjecten.append(Standplaats())
     bagObjecten.append(Verblijfsobject())
     bagObjecten.append(Pand())
-   
+    # TODO verbose wordt nog niet gebruikt
     verbose = False
     for o, a in opts:
         if o == "-v":

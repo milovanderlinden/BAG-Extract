@@ -97,11 +97,9 @@ class BAGZoekOpPostcode(BAGZoekPanel):
     def zoek(self, event=None):
         postcode   = self.postcodeText.GetValue()
         huisnummer = self.huisnummerText.GetValue()
-        sql  = "SELECT identificatie"
-        sql += "  FROM nummeraanduidingActueel"
-        sql += " WHERE upper(postcode) = '%s'" %(database.string(postcode).upper())
-        sql += "   AND huisnummer      = '%s'" %(database.string(huisnummer))
-        nummeraanduidingen = database.select(sql)
+        sql  = "SELECT identificatie FROM nummeraanduidingActueel WHERE upper(postcode) = %s AND huisnummer = %s"
+        inhoud = (str(postcode).upper(), str(huisnummer))
+        nummeraanduidingen = database.select(sql,inhoud)
         self.raadpleegScherm.boom.maakLeeg()
         self.raadpleegScherm.kaart.maakLeeg()
         logScherm("")
@@ -135,12 +133,9 @@ class BAGZoekOpAdres(BAGZoekPanel):
         woonplaatsNaam     = self.woonplaatsText.GetValue()
         openbareRuimteNaam = self.openbareRuimteText.GetValue()
         huisnummer         = self.huisnummerText.GetValue()
-        sql  = "SELECT nummeraanduidingidentificatie"
-        sql += "  FROM adresActueel"
-        sql += " WHERE upper(woonplaatsnaam) LIKE     '%s'" %(database.string(woonplaatsNaam.upper()))
-        sql += "   AND upper(openbareruimtenaam) LIKE '%s'" %(database.string(openbareRuimteNaam.upper()))
-        sql += "   AND huisnummer                   = '%s'" %(database.string(huisnummer))
-        nummeraanduidingen = database.select(sql)
+        sql  = "SELECT nummeraanduidingidentificatie FROM adresActueel WHERE upper(woonplaatsnaam) LIKE %s AND upper(openbareruimtenaam) LIKE %s AND huisnummer = %s"
+        inhoud = (str(woonplaatsNaam).upper() ,str(openbareRuimteNaam).upper(), str(huisnummer))
+        nummeraanduidingen = database.select(sql, inhoud)
         self.raadpleegScherm.boom.maakLeeg()
         self.raadpleegScherm.kaart.maakLeeg()
         logScherm("")
@@ -352,10 +347,8 @@ class BAGView(rt.RichTextCtrl):
             if attribuut.enkelvoudig():
                 self.WriteText(" - %-27s: %s\n" %(attribuut.naam(), attribuut.waarde()))                   
             else:
-                naam = attribuut.naam()
                 for waarde in attribuut.waarde():
                     self.WriteText(" - %-27s: %s\n" %(attribuut.naam(), waarde))
-                    naam = ""
         self.toonLevenscyclusKnop.Show(True)
         self.toonLevenscyclusKnop.Raise()
         self.toonLevenscyclusKnop.MoveXY(10,self.GetSize().GetHeight() - 30)
@@ -406,10 +399,8 @@ class BAGView(rt.RichTextCtrl):
                     else:
                         self.WriteText("%s\n" %(levenscyclus[v].attributen[a].waarde()))                   
                 else:
-                    naam = levenscyclus[v].attributen[a].naam()
                     for waarde in levenscyclus[v].attributen[a].waarde():
                         self.WriteText(" - %-27s: %s\n" %(levenscyclus[v].attributen[a].naam(), waarde))
-                        naam = ""
                 a += 1
             if levenscyclus[v].aanduidingRecordInactief.waarde() == "N":
                 laatsteActieve = v

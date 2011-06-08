@@ -1,4 +1,3 @@
-#------------------------------------------------------------------------------
 # Naam:         libDatabase.py
 # Omschrijving: Generieke functies voor databasegebruik binnen BAG Extract+
 # Auteur:       Matthijs van der Deijl
@@ -108,9 +107,12 @@ class Database:
             log("*** FOUT *** Kan SQL-statement '%s' niet uitvoeren:\n %s" %(sql, foutmelding))
             return False
 
-    def select(self, sql):
+    def select(self, sql, parameters=None):
         try:
-            self.cursor.execute(sql)
+            if parameters:
+                self.cursor.execute(sql,parameters)
+            else:
+                self.cursor.execute(sql)
             rows = self.cursor.fetchall()
             self.connection.commit()
             return rows

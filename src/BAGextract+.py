@@ -29,12 +29,17 @@
 # Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
 #------------------------------------------------------------------------------
 import wx
-import wx.richtext as rt
-import sys, os, os.path
-import datetime
+
+# TODO remove unused imports
+#import wx.richtext as rt
+#import sys
+import os
+import os.path
+#import datetime
+
 import csv
 from xml.dom import minidom
-from ConfigParser import ConfigParser
+#from ConfigParser import ConfigParser
 
 from libBAGextractPlusVersie import *
 from libBAGconfiguratie import *
@@ -507,6 +512,7 @@ class BAGExtractPlus(wx.Frame):
                     if i > 0:
                         sqlValues += ","
                     if i < len(rij):
+                        # TODO fix het gebruik van database.string, verwijder ' bij%s en gebruik parameters voor sql aanroep
                         sqlValues += "'%s'" %(database.string(rij[i]))
                     else:
                         sqlValues += "''"
