@@ -13,30 +13,64 @@
 # Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
 #------------------------------------------------------------------------------
 import psycopg2
-
 from libBAGconfiguratie import *
 from libLog import *
 
 class Database:
-    def __init__(self):
-        self.database = configuratie.database
-        self.host     = configuratie.host 
-        self.user     = configuratie.user
-        self.password = configuratie.password
-         
+    def __init__(self, args):
+        # Lees de configuratie uit BAG.conf
+        self.args = args
+        #print args
+        if args.database:
+            self.database = args.database
+        else:
+            self.database = configuratie.database
+        if args.host:
+            self.host = args.host
+        else:
+            self.host = configuratie.host
+        if args.username:
+            self.user = args.username
+        else:
+            self.user = configuratie.user
+        if args.port:
+            self.port = args.port
+        else:
+            self.port = 5432
+        if args.no_password:
+            # Gebruik geen wachtwoord voor de database verbinding
+            self.password = None
+        else:
+            if args.password:
+                self.password = args.password
+            else:
+                self.password = configuratie.password
+
+    def initialiseer(self, bestand):
+        print 'Probeer te verbinden...'
+        self.verbind()
+        print 'database script uitvoeren...'
+        try:
+            script  = open(bestand,'r').read()
+            self.cursor.execute(script)
+            self.connection.commit()
+            print 'script uitgevoerd'
+        except psycopg2.DatabaseError, e:
+            print "fout: procedures :%s" % str(e)
+            
+    def verbind(self):
         try:
             self.connection = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" %(self.database,
                                                                                                  self.user,
                                                                                                  self.host,
                                                                                                  self.password));
             self.cursor = self.connection.cursor()
-            print("Verbinding met database %s geslaagd." %(self.database))
-        except:
-            print("*** FOUT *** Verbinding met database %s niet geslaagd." %(self.database))
-            print("")
-            raw_input("Druk <enter> om af te sluiten")
+            if self.args.verbose:
+                print("verbonden met database %s" %(self.database))
+        except Exception, e:
+            print str(e)
+            print("fout: kan geen verbinding maken met database %s" %(self.database))
             sys.exit()
-
     # Maak van de datum/tijdstip string in de BAG een datumwaarde voor in de database 
     def datum(self, tekst):
         # TODO: Echte datum functie toepassen.
@@ -53,19 +87,27 @@ class Database:
         # Vervang een \ door \\
         return tekst.replace("'", "''").replace("\n", " ").replace("\\", "\\\\")
 
-    def maakObject(self, soort, naam, dropSQL, createSQL):
+    def maakObject(self, soort, naam, dropSQL, createSQL, parameters=None):
         # Probeer eerst het oude object weg te gooien. 
         try:
             self.connection.set_isolation_level(0)
             self.cursor.execute(dropSQL)
-            log("%s %s verwijderd" %(soort, naam))
+            if args.verbose:
+                print "%s %s verwijderd" %(soort, naam)
         except:
             pass
 
         # Maak het object nieuw aan.
         try:
             self.connection.set_isolation_level(0)
-            self.cursor.execute(createSQL)    
+            if parameters:
+                print createSQL
+                print parameters
+                self.cursor.mogrify(createSQL, parameters)
+                self.cursor.execute(createSQL, parameters)
+            else:
+                self.cursor.execute(createSQL)
+                
             log("%s %s nieuw aangemaakt" %(soort, naam))
             self.connection.commit()
             return True
@@ -73,8 +115,11 @@ class Database:
             log("*** FOUT *** Kan %s %s niet maken:\n %s" %(soort, naam, foutmelding))
             return False
         
-    def maakTabel(self, naam, createSQL):
-        return self.maakObject("Tabel", naam, "DROP TABLE %s CASCADE" %(naam), createSQL)
+    def maakTabel(self, naam, createSQL, parameters=None):
+        if parameters:
+            return self.maakObject("Tabel", naam, "DROP TABLE %s CASCADE" %(naam), createSQL, parameters)
+        else:
+            return self.maakObject("Tabel", naam, "DROP TABLE %s CASCADE" %(naam), createSQL)
 
     def maakView(self, naam, createSQL):
         return self.maakObject("View", naam, "DROP VIEW %s" %(naam), createSQL)
@@ -82,7 +127,7 @@ class Database:
     def maakIndex(self, naam, createSQL):
         return self.maakObject("Index", naam, "DROP INDEX %s" %(naam), createSQL)
 
-    def insert(self, sql, parameters=None, identificatie):
+    def insert(self, sql, identificatie, parameters=None):
         try:
             if parameters:
                 self.cursor.execute(sql, parameters)
@@ -147,14 +192,12 @@ class Database:
         return rows
 
     def controleerTabel(self, tabel):
-        sql = "SELECT tablename FROM pg_tables WHERE tablename = %s"
-        parameters = (tabel,)
+        schema = 'public'
+        sql = "select exists(select * from information_schema.tables where table_schema=%s AND table_name=%s)"
+        parameters = (tabel,schema)
         self.cursor.execute(sql, parameters)
-        rows = self.cursor.fetchall()
-        self.connection.commit()
-        if len(rows) == 0:
+        if cur.fetchone()[0]:
+            return True
+        else:
             return False
-        return True
-        
-# Globale variabele
-database = Database()
+
