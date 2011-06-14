@@ -17,7 +17,7 @@ class BAGconfiguratie:
         if not os.path.exists('BAG.conf'):
             print "*** FOUT *** Kan configuratiebestand 'BAG.conf' niet openen."
             print ""
-            raw_input("Druk <enter> om af te sluiten")
+            #raw_input("Druk <enter> om af te sluiten")
             sys.exit()
             
         configdict = ConfigParser()
@@ -30,6 +30,7 @@ class BAGconfiguratie:
             self.download = configdict.defaults()['download']
             self.extract  = configdict.defaults()['extract']
             self.logging  = configdict.defaults()['logging']
+            # TODO controleer of er commandline parameters zijn meegegeven die de instellingen overrulen
         except:
             print "*** FOUT *** Inhoud van configuratiebestand 'BAG.conf' is niet volledig."
             print ""

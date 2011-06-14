@@ -1,3 +1,4 @@
+import libBAG
 #------------------------------------------------------------------------------
 # Naam:         BAG.py
 # Omschrijving: Universe starter voor de applicatie, console als grafisch
@@ -5,75 +6,83 @@
 #------------------------------------------------------------------------------
 
 
-import getopt
+import argparse
 import sys
-from libLog import *
-from libDatabase import *
-from libBAG import *
-from libUnzip import *
+import postgresdb
+import logger
+import BAGFileReader
 from libLijm import *
+from libUnzip import *
+from libLog import *
+from libBAG import *
 
+
+nogui = False
 try:
     import wx
 except:
     nogui = True
 
-def gebruik():
-    print "%s		--dbinit        - wist oude tabellen en maakt nieuw tabellen\n" \
-          "		--dbindex       - herindexeert de database\n" \
-          "		--extract=<pad> - neemt een pad naar een extract en laadt deze\n" \
-          "		--mutatie=<pad> - neemt een pad naar een mutatie en laadt deze\n" \
-          "\n" \
-          "De connectie naar de database wordt geconfigureerd in: BAG.conf" % sys.argv[0]
-
-def main():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:v", ["help", "dbinit", "dbindex", "extract=", "mutatie="])
-    except getopt.GetoptError, err:
-        print str(err) # will print something like "option -a not recognized"
-        gebruik()
+class BAGParser(argparse.ArgumentParser):
+     def error(self, message):
+        if nogui:
+            print "\nLet op: De wx bibliotheek is niet geinstalleerd, alleen de commandline versie is beschikbaar.\n"
+        self.print_help()
         sys.exit(2)
 
-    bagObjecten = []
-    bagObjecten.append(Woonplaats())
-    bagObjecten.append(OpenbareRuimte())
-    bagObjecten.append(Nummeraanduiding())
-    bagObjecten.append(Ligplaats())
-    bagObjecten.append(Standplaats())
-    bagObjecten.append(Verblijfsobject())
-    bagObjecten.append(Pand())
+def main():
+    parser = BAGParser(description='BAG Extract, commandline tool voor het verwerken van BAG bestanden',
+        epilog="LET OP: configureer de database in BAG.conf")
+    parser.add_argument('-c', '--dbinit', action='store_true', help='wist oude tabellen en maakt nieuw tabellen')
+    parser.add_argument('-d', '--database', metavar='BAG', help='database naam')
+    parser.add_argument('-e', '--extract', metavar='bestand', help='neemt een pad naar een extract en laadt deze')
+    parser.add_argument('-H', '--host', metavar='localhost', help='database host')
+    parser.add_argument('-m', '--mutatie', metavar='bestand', help='neemt een pad naar een mutatie en laadt deze')
+    parser.add_argument('-U', '--username', metavar='postgres', help='database gebruiker')
+    parser.add_argument('-p', '--port', metavar='5432', help='database poort')
+    parser.add_argument('-W', '--password', metavar='postgres', help='wachtwoord voor postgres')
+    parser.add_argument('-w', '--no-password', action='store_true', help='gebruik geen wachtwoord voor de database verbinding')
+    parser.add_argument('-v', '--verbose', action='store_true', help='toon uitgebreide informatie tijdens het verwerken')
+    
+    args = parser.parse_args()
+
     # TODO verbose wordt nog niet gebruikt
-    verbose = False
-    for o, a in opts:
-        if o == "-v":
-            verbose = True
-        elif o in ("-h", "--help"):
-            gebruik()
-            sys.exit()
-        elif o in ("--dbinit"):
-            dbInit(bagObjecten)
-            sys.exit()
-        elif o in ("--dbindex"):
-            dbMaakIndex(bagObjecten)
-            sys.exit()
-        elif o in ("--extract="):
-            bestandVerwerkExtractPad(log, a, bagObjecten)
-            sys.exit()
-        elif o in ("--mutatie="):
-            bestandVerwerkMutatiePad(log, a)
-            sys.exit()
-        else:
-            assert False, "unhandled option"
+    #verbose = args.verbose
+    database = postgresdb.Database(args)
+    log = logger.LogHandler(args)
+    
+    #bagObjecten = []
+    #bagObjecten.append(libBAG.Woonplaats())
+    #bagObjecten.append(libBAG.OpenbareRuimte())
+    #bagObjecten.append(libBAG.Nummeraanduiding())
+    #bagObjecten.append(libBAG.Ligplaats())
+    #bagObjecten.append(libBAG.Standplaats())
+    #bagObjecten.append(libBAG.Verblijfsobject())
+    #bagObjecten.append(libBAG.Pand())
 
-
-    if nogui:
-        print "\nLet op: De wx bibliotheek is niet geinstalleerd, alleen de commandline versie is beschikbaar.\n"
-        gebruik()
+    if args.dbinit:
+        database.initialiseer('database/bagdb-1.0.sql')
+        sys.exit()
+    elif args.extract:
+        #bestandVerwerkExtractPad(log, a, bagObjecten)
+        myreader = BAGFileReader.BAGFileReader(args.extract, args)
+        myreader.process()
+        sys.exit()
+    elif args.mutatie:
+        myreader = BAGFileReader.BAGFileReader(args.mutatie, args)
+        #bestandVerwerkMutatiePad(log, a)
+        myreader.process()
         sys.exit()
     else:
-        app = wx.App(0)
-        BAGExtractPlus(app, bagObjecten)
-        app.MainLoop()
+        if nogui:
+            log.log("\nLet op: De wx bibliotheek is niet geinstalleerd, alleen de commandline versie is beschikbaar.\n")
+            self.print_help()
+            sys.exit(2)
+        else:
+            import BAGextractplus
+            app = wx.App(0)
+            BAGextractplus.BAGExtractPlus(app, bagObjecten)
+            app.MainLoop()
 
 if __name__ == "__main__":
     main()

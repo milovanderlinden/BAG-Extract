@@ -364,20 +364,24 @@ class BAGobject:
         return "%s %s - %s" %(self.objectType(), self.identificatie.waarde(), self.adres())
     
     # Maak een tabel in de database
-    def maakTabel(self):
+    def maakTabel(self, database):
         sql = ""
+        inhoud = []
         for attribuut in self.attributen:
             if attribuut.enkelvoudig():
                 if sql == "":
-                    sql  = "CREATE TABLE " + self.naam() + " (" + attribuut.naam() + " VARCHAR(%d)" %(attribuut.lengte())
+                    sql  = "CREATE TABLE " + self.naam() +  " (" + attribuut.naam() + " VARCHAR(%s)"
+                    inhoud.append(attribuut.lengte())
                 else:
-                    sql += "," + attribuut.naam() + " VARCHAR(%d)" %(attribuut.lengte())
+                    sql += "," + attribuut.naam() + " VARCHAR(%s)"
+                    inhoud.append(attribuut.lengte())
+                    
         sql += ",begindatum DATE"
         sql += ",einddatum  DATE"
         sql += ")"
         if self.heeftGeometrie():
             sql += " WITH (OIDS=true)"
-        database.maakTabel(self.naam(), sql)
+        database.maakTabel(self.naam(), sql, inhoud)
 
         if self.heeftGeometrie():
             inhoud = (self.naam().lower(), self.geometrie().soort(), self.geometrie().dimensie())
@@ -390,21 +394,21 @@ class BAGobject:
     # Maak voor een relatie een tabel in de database
     def maakTabelRelatie(self, relatie):
         sql  = "CREATE TABLE " + relatie.relatieNaam() + " " 
-        sql += "(identificatie               VARCHAR(16)"
-        sql += ",aanduidingrecordinactief    VARCHAR(1)"
-        sql += ",aanduidingrecordcorrectie   VARCHAR(5)"
+        sql += "(identificatie VARCHAR(16)"
+        sql += ",aanduidingrecordinactief VARCHAR(1)"
+        sql += ",aanduidingrecordcorrectie VARCHAR(5)"
         sql += ",begindatumtijdvakgeldigheid VARCHAR(16)"
-        sql += "," + relatie.naam() + " VARCHAR(%d)" %(relatie.lengte())
-        sql += ")"
-        database.maakTabel(relatie.relatieNaam(), sql)
+        sql += "," + relatie.naam() + " VARCHAR(%s))"
+        inhoud =  ((relatie.lengte()),)
+        database.maakTabel(relatie.relatieNaam(), sql, inhoud)
 
     # Controleer of een tabel voor een relatie bestaat in de database
     def controleerTabelRelatie(self, relatie):
         return database.controleerTabel(relatie.relatieNaam())
 
     # Maak een index op de tabel voor het objecttype in de database.
-    def maakIndex(self):
-        sql  = "CREATE UNIQUE INDEX " + self.naam() + "key"
+    def maakIndex(self, database, veld):
+        sql  = "CREATE UNIQUE INDEX " + veld + "_idx"
         sql += " ON " + self.naam() + " "
         sql += "(identificatie"
         sql += ",aanduidingrecordinactief"
@@ -487,7 +491,7 @@ class BAGobject:
         inhoud.append(database.datum(self.begindatumTijdvakGeldigheid.waarde()))
         inhoud.append(database.datum(self.einddatumTijdvakGeldigheid.waarde()))
         sql = "INSERT INTO " + self.naam() + " " + velden + " VALUES " + waardes
-        database.insert(sql, tuple(inhoud), self.identificatie.waarde(),)
+        database.insert(sql, self.identificatie.waarde(),tuple(inhoud))
 
         for attribuut in self.attributen:
             if not attribuut.enkelvoudig():
@@ -504,7 +508,7 @@ class BAGobject:
                               self.aanduidingRecordCorrectie.waarde(), \
                               self.begindatumTijdvakGeldigheid.waarde(), \
                               waarde,)
-                    database.insert(sql, inhoud, self.identificatie.waarde())
+                    database.insert(sql, self.identificatie.waarde(), inhoud)
 
     # Update het object in de database.
     # Alleen de volgende attributen kunnen hierbij wijzigen
@@ -699,8 +703,8 @@ class BAGobject:
 class Woonplaats(BAGobject):
     def __init__(self):
         BAGobject.__init__(self)
-        self.woonplaatsNaam      = BAGattribuut(            80, "woonplaatsNaam", "bag_LVC:woonplaatsNaam")
-        self.woonplaatsStatus    = BAGattribuut(            80, "woonplaatsStatus", "bag_LVC:woonplaatsStatus")
+        self.woonplaatsNaam = BAGattribuut(80, "woonplaatsNaam", "bag_LVC:woonplaatsNaam")
+        self.woonplaatsStatus = BAGattribuut(80, "woonplaatsStatus", "bag_LVC:woonplaatsStatus")
         self.woonplaatsGeometrie = BAGmultiPolygoon(2, 1000000, "woonplaatsGeometrie", "bag_LVC:woonplaatsGeometrie")
         self.attributen.append(self.woonplaatsNaam)       
         self.attributen.append(self.woonplaatsStatus)       
@@ -725,7 +729,7 @@ class Woonplaats(BAGobject):
         return self.woonplaatsNaam.waarde()
     
     def maakIndex(self):
-        BAGobject.maakIndex(self)
+        BAGobject.maakIndex(self, database)
         sql  = "CREATE INDEX woonplaatsNaam"
         sql += " ON woonplaats" 
         sql += "(woonplaatsNaam)"
@@ -769,8 +773,8 @@ class OpenbareRuimte(BAGobject):
         woonplaats.leesActueelVoorkomenUitDatabase()
         return "%s in %s" %(self.openbareRuimteNaam.waarde(), woonplaats.woonplaatsNaam.waarde())
         
-    def maakIndex(self):
-        BAGobject.maakIndex(self)
+    def maakIndex(self, database):
+        BAGobject.maakIndex(self, database)
         sql  = "CREATE INDEX openbareruimteNaam"
         sql += " ON openbareruimte" 
         sql += "(openbareruimtenaam)"
@@ -855,8 +859,8 @@ class Nummeraanduiding(BAGobject):
             adresseerbaarObject.leesActueelVoorkomenUitDatabase()
         return adresseerbaarObject              
 
-    def maakIndex(self):
-        BAGobject.maakIndex(self)
+    def maakIndex(self, database):
+        BAGobject.maakIndex(self, database)
         sql  = "CREATE INDEX nummeraanduidingPostcode"
         sql += " ON nummeraanduiding" 
         sql += "(postcode)"
@@ -933,8 +937,8 @@ class BAGadresseerbaarObject(BAGobject):
         return (BAGobject.controleerTabel(self)
                 and BAGobject.controleerTabelRelatie(self, self.nevenadres))
         
-    def maakIndex(self):
-        BAGobject.maakIndex(self)
+    def maakIndex(self, database):
+        BAGobject.maakIndex(self, database)
         if not BAGadresseerbaarObject._index_nevenadres_aangemaakt:
             BAGobject.maakIndexRelatie(self, self.nevenadres)
             BAGadresseerbaarObject._index_nevenadres_aangemaakt = True
