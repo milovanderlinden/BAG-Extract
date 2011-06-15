@@ -1,0 +1,464 @@
+#------------------------------------------------------------------------------
+# Naam:         Objecten.py
+# Omschrijving: Classes voor de BAG-objecten
+#
+# Per BAG-objecttype (woonplaats, openbareruimte, nummeraanduiding,
+# ligplaats, standplaats, verblijfsobject, pand) is er een aparte class
+# met functionaliteit voor het lezen uit XML, het schrijven in de database
+# en het lezen uit de database. Ook bevat elke BAG-objectype-class functies
+# voor het initialiseren van de database (maken van tabellen, indexen en
+# views).
+# De BAG-objecttype-classes zijn afgeleid van de basisclass BAGobject.
+# Hierin is een BAG-object een verzameling van BAG-attributen met elk
+# hun eigen eigenschappen.
+#
+# Auteurs:       Matthijs van der Deijl, Milo van der Linden
+#
+# Versie:       1,8
+#
+# Versie:       1.7
+#               - objecttype LPL vervangen door LIG
+#               - objecttype SPL vervangen door STA
+# Datum:        11 maart 2011
+#
+# Versie:       1.6
+#               - Veldlengte voor tekstwaarde van geometrie verhoogt naar 1000000
+# Datum:        8 oktober 2010
+#
+# Versie:       1.3
+#               - Tag voor VerkorteOpenbareRuimteNaam verbeterd
+#               - GeomFromText vervangen door GeomFromEWKT
+#                 (dit voorkomt Warnings in de database logging)
+#               - Functie controleerTabel toegevoegd
+#               - Primaire index op tabel uniek gemaakt
+#               - Ophalen van waardes uit database met leestekens verbeterd
+# Datum:        28 december 2009
+#
+# Versie:       1.2
+# Datum:        24 november 2009
+#
+# Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
+#------------------------------------------------------------------------------
+
+import ogr
+
+#from sqlalchemy.ext.declarative import declarative_base
+#Base = declarative_base()
+# TODO: Testen met sqlalchemy en impact bepalen
+class Base:
+    def __init__(self):
+        self.id = None
+
+
+# Geef de waarde van een textnode in XML
+def getText(nodelist):
+    """
+    Voeg de inhoud van XML textnodes samen tot een string
+    """
+    rc = ""
+    for node in nodelist:
+        if node.nodeType == node.TEXT_NODE:
+            rc = rc + node.data
+    return rc
+
+def getTimestamp(node):
+    """
+    Maak een datum/tijd object van een XML datum/tijd
+    """
+    tmp_datetime = gettext(node.childNodes).split('+')
+    return datetime.datetime(*time.strptime(tmp_datetime[0], "%Y-%m-%dT%H:%M:%S")[0:6])
+
+class Tijdvakgeldigheid():
+    """
+    BAG sub-klasse.
+    """
+    def __init__(self,xmlnode):
+        self.tag = "bag_LVC:tijdvakgeldigheid"
+        self.naam = "tijdvakgeldigheid"
+        self.type = ''
+        self.einddatum = None
+        self.begindatum = None
+        for node in xmlnode.childNodes:
+            if node.localName == 'begindatumTijdvakGeldigheid':
+                self.begindatum = getText(node.childNodes)
+            if node.localName == 'einddatumTijdvakGeldigheid':
+                self.einddatum = getText(node.childNodes)
+    def __repr__(self):
+       return "<Tijdvakgeldigheid('%s','%s')>" % (self.begindatum, self.einddatum)
+
+class GerelateerdPand():
+    """
+    BAG sub-klasse.
+    """
+    def __init__(self,xmlnode):
+        self.tag = "bag_LVC:gerelateerdPand"
+        self.naam = "gerelateerdPand"
+        self.type = ''
+        for node in xmlnode.childNodes:
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+    def __repr__(self):
+       return "<GerelateerdPand('%s')>" % (self.identificatie,)
+
+class GerelateerdeOpenbareRuimte():
+    """
+    BAG sub-klasse.
+    """
+    def __init__(self,xmlnode):
+        self.tag = "bag_LVC:gerelateerdeOpenbareRuimte"
+        self.naam = "gerelateerdeOpenbareRuimte"
+        self.type = ''
+        for node in xmlnode.childNodes:
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+    def __repr__(self):
+       return "<GerelateerdeOpenbareRuimte('%s')>" % (self.identificatie,)
+
+class GerelateerdeWoonplaats():
+    """
+    BAG sub-klasse.
+    """
+    def __init__(self,xmlnode):
+        self.tag = "bag_LVC:gerelateerdeWoonplaats"
+        self.naam = "gerelateerdeWoonplaats"
+        self.type = ''
+        for node in xmlnode.childNodes:
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+    def __repr__(self):
+       return "<GerelateerdeWoonplaats('%s')>" % (self.identificatie,)
+
+class GerelateerdeAdressen():
+    """
+    BAG sub-klasse.
+    Collectie van gerelateerde adressen
+    """
+    def __init__(self,xmlnode):
+        #print 'GerelateerdeAdressen __init__'
+        self.tag = "bag_LVC:gerelateerdeAdressen"
+        self.naam = "gerelateerdeAdressen"
+        self.type = ''
+        for node in xmlnode.childNodes:
+            if node.localName == 'hoofdadres':
+                for adresElement in node.childNodes:
+                    if adresElement.localName == 'identificatie':
+                        self.hoofdadres = getText(adresElement.childNodes)
+    def __repr__(self):
+       return "<GerelateerdeAdressen('%s')>" % (self.hoofdadres,)
+
+class Bron():
+    """
+    BAG sub-klasse.
+    """
+    def __init__(self,xmlnode):
+        self.tag = "bag_LVC:bron"
+        self.naam = "bron"
+        self.type = ''
+        for node in xmlnode.childNodes:
+            if node.localName == 'documentdatum':
+                self.documentdatum = getText(node.childNodes)
+            if node.localName == 'documentnummer':
+                self.documentnummer = getText(node.childNodes)
+    def __repr__(self):
+       return "<Bron('%s','%s')>" % (self.documentdatum, self.documentnummer)
+
+class OpenbareRuimte(Base):
+    """
+    BAG Klasse OpenbareRuimte
+    Class voor het BAG-objecttype OpenbareRuimte.
+    """
+
+    def __init__(self,xmlnode):
+        self.tag = "bag_LVC:OpenbareRuimte"
+        self.naam = "OpenbareRuimte"
+        self.type = 'OPR'
+        for node in xmlnode.childNodes:
+            if node.localName == 'bron':
+                self.bron = Bron(node)
+            if node.localName == 'tijdvakgeldigheid':
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordInactief':
+                self.inactief = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordCorrectie':
+                self.correctie = getText(node.childNodes)
+            if node.localName == 'officieel':
+                self.officieel = getText(node.childNodes)
+            if node.localName == 'inOnderzoek':
+                self.inonderzoek = getText(node.childNodes)
+            if node.localName == 'openbareRuimteNaam':
+                self.naam = getText(node.childNodes)
+            if node.localName == 'openbareruimteStatus':
+                #let op! kleine r van ruimte, is dit een fout in de xml?
+                self.status = getText(node.childNodes)
+            if node.localName == 'openbareRuimteType':
+                self.type = getText(node.childNodes)
+            if node.localName == 'gerelateerdeWoonplaats':
+                self.gerelateerdeWoonplaats = GerelateerdeWoonplaats(node)
+
+    def __repr__(self):
+       return "<OpenbareRuimte('%s','%s', '%s', '%s')>" % (self.identificatie, self.naam, self.tijdvakgeldigheid, self.bron)
+
+class Nummeraanduiding(Base):
+    def __init__(self,xmlnode):
+        self.tag = "bag_LVC:Nummeraanduiding"
+        self.naam = "Nummeraanduiding"
+        self.type = 'NUM'
+        for node in xmlnode.childNodes:
+            if node.localName == 'bron':
+                self.bron = Bron(node)
+            if node.localName == 'tijdvakgeldigheid':
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordInactief':
+                self.inactief = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordCorrectie':
+                self.correctie = getText(node.childNodes)
+            if node.localName == 'officieel':
+                self.officieel = getText(node.childNodes)
+            if node.localName == 'inOnderzoek':
+                self.inonderzoek = getText(node.childNodes)
+            if node.localName == 'huisnummer':
+                self.huisnummer = getText(node.childNodes)
+            if node.localName == 'postcode':
+                self.postcode = getText(node.childNodes)
+            if node.localName == 'nummeraanduidingStatus':
+                self.status = getText(node.childNodes)
+            if node.localName == 'typeAdresseerbaarObject':
+                self.typeAdresseerbaarObject = getText(node.childNodes)
+            if node.localName == 'gerelateerdeOpenbareRuimte':
+                self.gerelateerdeOpenbareRuimte = GerelateerdeOpenbareRuimte(node)
+
+    def __repr__(self):
+       return "<Nummeraanduiding('%s', '%s', '%s')>" % (self.identificatie, self.tijdvakgeldigheid, self.bron)
+
+class Standplaats(Base):
+    # TODO: Niet ontvangen in sample set, vragen om voorbeeld en verder uitwerken
+    def __init__(self):
+        self.tag = "bag_LVC:Standplaats"
+        self.naam = "Standplaats"
+        self.type = 'STA'
+    def __repr__(self):
+       #return "<Standplaats('%s','%s', '%s', '%s')>" % (self.identificatie, self.naam, self.tijdvakgeldigheid, self.bron)
+       return "<Standplaats('%s','%s', '%s')>" % (self.tag, self.naam, self.type)
+
+class Pand(Base):
+    def __init__(self,xmlnode):
+        self.tag = "bag_LVC:Pand"
+        self.naam = "Pand"
+        self.type = 'PND'
+        for node in xmlnode.childNodes:
+            if node.localName == 'bron':
+                self.bron = Bron(node)
+            if node.localName == 'tijdvakgeldigheid':
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordInactief':
+                self.inactief = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordCorrectie':
+                self.correctie = getText(node.childNodes)
+            if node.localName == 'officieel':
+                self.officieel = getText(node.childNodes)
+            if node.localName == 'inOnderzoek':
+                self.inonderzoek = getText(node.childNodes)
+            if node.localName == 'pandstatus':
+                self.status = getText(node.childNodes)
+            if node.localName == 'bouwjaar':
+                self.bouwjaar = getText(node.childNodes)
+            if node.localName == 'pandGeometrie':
+                for geometrie in node.childNodes:
+                    gml = geometrie.toxml()
+                    self.geometrie = ogr.CreateGeometryFromGML(str(gml))
+
+    def __repr__(self):
+       return "<Pand('%s','%s', '%s', '%s')>" % (self.identificatie, self.status, self.tijdvakgeldigheid, self.bron)
+
+class Ligplaats(Base):
+    """
+    BAG Klasse Ligplaats
+    Class voor het BAG-objecttype Ligplaats.
+    """
+
+    #__tablename__ = 'ligplaats'
+    #identificatie = Column(Integer, primary_key=True)
+    #aanduidingrecordinactief = Column(String(1))
+    #aanduidingrecordcorrectie = Column(String(5))
+    #officieel = Column(String(1))
+    #inonderzoek = Column(String(1))
+    #begindatumtijdvakgeldigheid = Column(String(16))
+    #einddatumtijdvakgeldigheid = Column(String(16))
+    #documentnummer = Column(String(20))
+    #documentdatum = Column(String(8))
+    #hoofdadres  = Column(String(16))
+    #ligplaatsstatus = Column(String(80))
+    #ligplaatsgeometrie = Column(String(1000000))
+    #begindatum = Column(Date)
+    #einddatum = Column(Date)
+    #geometrie = Column(Geometry)
+
+    def __init__(self,xmlnode):
+        self.tag = "bag_LVC:Ligplaats"
+        self.naam = "ligplaats"
+        self.type = 'LIG'
+        for node in xmlnode.childNodes:
+            if node.localName == 'gerelateerdeAdressen':
+                self.gerelateerdeAdressen = GerelateerdeAdressen(node)
+            if node.localName == 'bron':
+                self.bron = Bron(node)
+            if node.localName == 'tijdvakgeldigheid':
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordInactief':
+                self.inactief = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordCorrectie':
+                self.correctie = getText(node.childNodes)
+            if node.localName == 'officieel':
+                self.officieel = getText(node.childNodes)
+            if node.localName == 'inOnderzoek':
+                self.inonderzoek = getText(node.childNodes)
+            if node.localName == 'ligplaatsStatus':
+                self.status = getText(node.childNodes)
+            if node.localName == 'ligplaatsGeometrie':
+                for geometrie in node.childNodes:
+                    gml = geometrie.toxml()
+                    self.geometrie = ogr.CreateGeometryFromGML(str(gml))
+
+    def __repr__(self):
+       return "<Ligplaats('%s','%s', '%s', '%s')>" % (self.identificatie, self.gerelateerdeAdressen, self.tijdvakgeldigheid, self.bron)
+   
+    def insert(self):
+        self.sql = """INSERT INTO ligplaats (identificatie, aanduidingrecordinactief,
+            aanduidingrecordcorrectie, officieel, inonderzoek, begindatumtijdvakgeldigheid,
+            einddatumtijdvakgeldigheid, documentnummer, documentdatum, hoofdadres,
+            ligplaatsstatus, begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
+        self.valuelist = (self.identificatie, self.inactief, \
+            self.correctie, self.officieel, self.inonderzoek, self.tijdvakgeldigheid.begindatum, \
+            self.tijdvakgeldigheid.einddatum, self.bron.documentnummer, self.bron.documentdatum, \
+            self.gerelateerdeAdressen.hoofdadres, self.status, None, None, str(self.geometrie.ExportToWkt()), '28992')
+
+#--------------------------------------------------------------------------------------------------------
+# Class         Verblijfsobject
+# Omschrijving  Class voor het BAG-objecttype Verblijfsobject.
+#--------------------------------------------------------------------------------------------------------
+class Verblijfsobject():
+    def __init__(self,xmlnode):
+        #print 'ligplaats __init__'
+        #print xmlnode
+        self.tag = "bag_LVC:Verblijfsobject"
+        self.naam = "Verblijfsobject"
+        self.type = 'VBO'
+        for node in xmlnode.childNodes:
+            if node.localName == 'gerelateerdeAdressen':
+                self.gerelateerdeAdressen = GerelateerdeAdressen(node)
+            if node.localName == 'bron':
+                self.bron = Bron(node)
+            if node.localName == 'tijdvakgeldigheid':
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordInactief':
+                if getText(node.childNodes) <> 'N':
+                    self.inactief = True
+            if node.localName == 'aanduidingRecordCorrectie':
+                self.correcte = getText(node.childNodes)
+            if node.localName == 'officieel':
+                self.officieel = getText(node.childNodes)
+            if node.localName == 'inOnderzoek':
+                self.inonderzoek = getText(node.childNodes)
+            if node.localName == 'ligplaatsStatus':
+                self.status = getText(node.childNodes)
+            if node.localName == 'gebruiksdoelVerblijfsobject':
+                self.gebruiksdoel = getText(node.childNodes)
+            if node.localName == 'oppervlakteVerblijfsobject':
+                self.oppervlakte = getText(node.childNodes)
+            if node.localName == 'gerelateerdPand':
+                self.gerelateerdPand = GerelateerdPand(node)
+            if node.localName == 'ligplaatsGeometrie':
+                # zet de geometrie om naar echte geometrie (ogr) voordeel is dat je dit naar
+                # shape, wkt, wkb etc. kunt exporteren
+                #self.geometrie = gettext(node.childNodes)
+                for geometrie in node.childNodes:
+                    gml = geometrie.toxml()
+                    #Dirty Hack, osgeo.ogr kan geen 2.5D verwerken, verwijder daarom de Z coordinaat
+                    #gml = gml.replace(' 0.0', '')
+                    self.geometrie = ogr.CreateGeometryFromGML(str(gml))
+    def __repr__(self):
+       return "<Verblijfsobject('%s','%s', '%s')>" % (self.tag, self.naam, self.type)
+
+    #def copyfrom(self):
+        #Construct a "giant string" for insertion..
+    #    f = StringIO("somegigantic\tstring\twithcorrect\tseperators\n")
+    #    cur.copy_from(f, 'test', columns=('num', 'data'))
+    #    print self.identificatie
+        #print self
+    def insert(self):
+        self.sql = """INSERT INTO verblijfsobject (identificatie, aanduidingrecordinactief,
+            aanduidingrecordcorrectie, officieel, inonderzoek, begindatumtijdvakgeldigheid,
+            einddatumtijdvakgeldigheid, documentnummer, documentdatum, hoofdadres,
+            verblijfsobjectstatus, oppervlakteverblijfsobject,
+            begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
+        self.valuelist = (self.identificatie, self.inactief, \
+            self.correctie, self.officieel, self.inonderzoek, self.tijdvakgeldigheid.begindatum, \
+            self.tijdvakgeldigheid.einddatum, self.bron.documentnummer, self.bron.documentdatum, \
+            self.gerelateerdeAdressen.hoofdadres, self.status, self.oppervlakte, None, None, str(self.geometrie.ExportToWkt()), '28992')
+
+#--------------------------------------------------------------------------------------------------------
+# Class         Woonplaats
+# Omschrijving  Class voor het BAG-objecttype Woonplaats.
+#--------------------------------------------------------------------------------------------------------
+class Woonplaats():
+    def __init__(self, xmlnode):
+        #print 'Woonplaats __init__'
+        #print xmlnode
+        self.tag = "bag_LVC:Woonplaats"
+        self.naam = "Woonplaats"
+        self.type = 'WPL'
+        for node in xmlnode.childNodes:
+            if node.localName == 'woonplaatsNaam':
+                self.naam = getText(node.childNodes)
+            if node.localName == 'bron':
+                self.bron = Bron(node)
+            if node.localName == 'tijdvakgeldigheid':
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordInactief':
+                if getText(node.childNodes) <> 'N':
+                    self.inactief = True
+            if node.localName == 'aanduidingRecordCorrectie':
+                self.correcte = getText(node.childNodes)
+            if node.localName == 'officieel':
+                self.officieel = getText(node.childNodes)
+            if node.localName == 'inOnderzoek':
+                self.inonderzoek = getText(node.childNodes)
+            if node.localName == 'woonplaatsStatus':
+                self.status = getText(node.childNodes)
+            if node.localName == 'woonplaatsGeometrie':
+                # zet de geometrie om naar echte geometrie (ogr) voordeel is dat je dit naar
+                # shape, wkt, wkb etc. kunt exporteren
+                #self.geometrie = gettext(node.childNodes)
+                for geometrie in node.childNodes:
+                    gml = geometrie.toxml()
+                    #Dirty Hack, osgeo.ogr kan geen 2.5D verwerken, verwijder daarom de Z coordinaat
+                    gml = gml.replace(' 0.0', '')
+                    self.geometrie = ogr.CreateGeometryFromGML(str(gml))
+        #print self
+    def __repr__(self):
+       return "<Woonplaats('%s','%s', '%s')>" % (self.tag, self.naam, self.type)
+    
+    def insert(self):
+        self.sql = """INSERT INTO woonplaats (identificatie, aanduidingrecordinactief,
+            aanduidingrecordcorrectie, officieel, inonderzoek, begindatumtijdvakgeldigheid,
+            einddatumtijdvakgeldigheid, documentnummer, documentdatum, woonplaatsnaam,
+            woonplaatsstatus, 
+            begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
+        self.valuelist = (self.identificatie, self.inactief, \
+            self.correctie, self.officieel, self.inonderzoek, self.tijdvakgeldigheid.begindatum, \
+            self.tijdvakgeldigheid.einddatum, self.bron.documentnummer, self.bron.documentdatum, \
+            self.naam, self.status, None, None, str(self.geometrie.ExportToWkt()), '28992')
+
+
