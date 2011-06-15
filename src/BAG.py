@@ -1,21 +1,17 @@
-import libBAG
+__author__ = "Stefan de Konink"
+__date__ = "$Jun 11, 2011 3:46:27 PM$"
+
 #------------------------------------------------------------------------------
 # Naam:         BAG.py
 # Omschrijving: Universe starter voor de applicatie, console als grafisch
 # Auteur:       Stefan de Konink
 #------------------------------------------------------------------------------
 
-
 import argparse
 import sys
 import postgresdb
 import logger
 import BAGFileReader
-from libLijm import *
-from libUnzip import *
-from libLog import *
-from libBAG import *
-
 
 nogui = False
 try:
@@ -37,17 +33,15 @@ def main():
     parser.add_argument('-d', '--database', metavar='BAG', help='database naam')
     parser.add_argument('-e', '--extract', metavar='bestand', help='neemt een pad naar een extract en laadt deze')
     parser.add_argument('-H', '--host', metavar='localhost', help='database host')
-    parser.add_argument('-m', '--mutatie', metavar='bestand', help='neemt een pad naar een mutatie en laadt deze')
+    #parser.add_argument('-m', '--mutatie', metavar='bestand', help='neemt een pad naar een mutatie en laadt deze')
     parser.add_argument('-U', '--username', metavar='postgres', help='database gebruiker')
     parser.add_argument('-p', '--port', metavar='5432', help='database poort')
     parser.add_argument('-W', '--password', metavar='postgres', help='wachtwoord voor postgres')
     parser.add_argument('-w', '--no-password', action='store_true', help='gebruik geen wachtwoord voor de database verbinding')
     parser.add_argument('-v', '--verbose', action='store_true', help='toon uitgebreide informatie tijdens het verwerken')
-    
-    args = parser.parse_args()
 
-    # TODO verbose wordt nog niet gebruikt
-    #verbose = args.verbose
+    # Initialiseer
+    args = parser.parse_args()
     database = postgresdb.Database(args)
     log = logger.LogHandler(args)
     
@@ -64,13 +58,8 @@ def main():
         database.initialiseer('database/bagdb-1.0.sql')
         sys.exit()
     elif args.extract:
-        #bestandVerwerkExtractPad(log, a, bagObjecten)
+        #Verwerkt levering, extract en mutatie
         myreader = BAGFileReader.BAGFileReader(args.extract, args)
-        myreader.process()
-        sys.exit()
-    elif args.mutatie:
-        myreader = BAGFileReader.BAGFileReader(args.mutatie, args)
-        #bestandVerwerkMutatiePad(log, a)
         myreader.process()
         sys.exit()
     else:

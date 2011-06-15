@@ -1,27 +1,16 @@
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
-
-__author__ = "miblon"
+__author__ = "Milo van der Linden"
 __date__ = "$Jun 11, 2011 3:46:27 PM$"
 
 import zipfile
 import logger
 import orm
 import os
+from xml.dom.minidom import parse
 
-#import datetime
-#import time
-#import xml.dom.minidom
-#import psycopg2
-#import ConfigParser
-#import sys
-#import logging
-#import logging.handlers
 try:
   from cStringIO import StringIO
 except:
   from StringIO import StringIO
-from xml.dom.minidom import parse
 
 class BAGFileReader:
     def __init__(self, file, args):
@@ -76,15 +65,9 @@ class BAGFileReader:
                 self.log.log(nested)
 
     def processXML(self,file, xml):
-    #try:
-        #lees het root object om de inhoud te bepalen
-        #wandel vervolgens door de boom
         rootObj = xml.documentElement
-        document = self.orm.getDocument(rootObj) #bepaal of het een extract of een mutatie is
+        #de orm bepaalt of het een extract of een mutatie is
+        document = self.orm.getDocument(rootObj) 
         self.log.log(document)
         xml.unlink()
-    #except Exception, e:
-        #self.log.log("*** FOUT *** Fout in verwerking xml-bestand '%s':\n %s" %(file, e))
-        #print Exception.message
-        #print e
         
