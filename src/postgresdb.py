@@ -85,6 +85,6 @@ class Database:
                 self.cursor.execute(sql, parameters)
             else:
                 self.cursor.execute(sql)
-        except (psycopg2.IntegrityError,), e:
+        except (psycopg2.IntegrityError,psycopg2.ProgrammingError), e:
             print "fout %s voor query: %s" %(str(e), str(self.cursor.mogrify(sql,parameters)))
             return self.cursor.rowcount

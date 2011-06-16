@@ -63,6 +63,7 @@ class BAGFileReader:
                 self.log.log(nested)
 
     def processXML(self,file, xml):
+        print file
         rootObj = xml.documentElement
         #de orm bepaalt of het een extract of een mutatie is
         document = self.orm.getDocument(rootObj) 

@@ -519,28 +519,41 @@ class Verblijfsobject():
                 #self.geometrie = gettext(node.childNodes)
                 for geometrie in node.childNodes:
                     gml = geometrie.toxml()
-                    #Dirty Hack, osgeo.ogr kan geen 2.5D verwerken, verwijder daarom de Z coordinaat
-                    #gml = gml.replace(' 0.0', '')
-                    self.geometrie = ogr.CreateGeometryFromGML(str(gml))
+                    _geom = ogr.CreateGeometryFromGML(str(gml))
+                    print _geom.GetGeometryName()
+                    #print _geom
+                    if _geom.GetGeometryName() <> 'POINT': #polygon!
+                        #Gebruik de centroide van de geometry
+                        vlak = _geom
+                        #Nu a
+                        _punt = _geom.Centroid()
+                        punt = ogr.Geometry(ogr.wkbPoint25D)
+                        punt.AddPoint(_punt.GetX(),_punt.GetY(),0)
+                    else: # We gaan uit van punt
+                       vlak = None
+                       punt = _geom
+                self.punt = punt
+                self.vlak = vlak
+
     def __repr__(self):
        return "<Verblijfsobject('%s','%s', '%s')>" % (self.tag, self.naam, self.type)
 
-    #def copyfrom(self):
-        #Construct a "giant string" for insertion..
-    #    f = StringIO("somegigantic\tstring\twithcorrect\tseperators\n")
-    #    cur.copy_from(f, 'test', columns=('num', 'data'))
-    #    print self.identificatie
-        #print self
     def insert(self):
+        if self.vlak:
+            #tegen mijn principe, maar kan nu even niet anders...
+            vlakval = self.vlak.ExportToWkt()
+        else:
+            vlakval = None
+
         self.sql = """INSERT INTO verblijfsobject (identificatie, aanduidingrecordinactief,
             aanduidingrecordcorrectie, officieel, inonderzoek, documentnummer, documentdatum, hoofdadres,
             gerelateerdpand,
             verblijfsobjectstatus, oppervlakteverblijfsobject,
-            begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
+            begindatum, einddatum, punt, vlak) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s),ST_GeomFromText(%s,%s))"""
         self.valuelist = (self.identificatie, self.inactief, \
             self.correctie, self.officieel, self.inonderzoek, self.bron.documentnummer, self.bron.documentdatum, \
             self.gerelateerdeAdressen.hoofdadres, self.gerelateerdPand.identificatie, self.status, self.oppervlakte, self.tijdvakgeldigheid.begindatum, \
-            self.tijdvakgeldigheid.einddatum, str(self.geometrie.ExportToWkt()), '28992')
+            self.tijdvakgeldigheid.einddatum, str(self.punt.ExportToWkt()), '28992', vlakval,'28992')
 
 #--------------------------------------------------------------------------------------------------------
 # Class         Woonplaats
