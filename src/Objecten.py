@@ -42,7 +42,7 @@ __date__ = "$Jun 11, 2011 3:46:27 PM$"
 # Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
 #------------------------------------------------------------------------------
 
-import ogr
+from osgeo import ogr #apt-get install python-gdal
 import datetime
 import time
 #from sqlalchemy.ext.declarative import declarative_base
@@ -580,7 +580,10 @@ class Woonplaats():
                 for geometrie in node.childNodes:
                     gml = geometrie.toxml()
                     simplegeom = ogr.CreateGeometryFromGML(str(gml))
-                    multigeom.AddGeometryDirectly(simplegeom)
+                    if simplegeom.GetGeometryType() == 6: #multisurface!
+                        multigeom = simplegeom
+                    else:
+                        multigeom.AddGeometryDirectly(simplegeom)
                 self.geometrie = multigeom
         #print self
     def __repr__(self):

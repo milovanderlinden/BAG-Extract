@@ -58,7 +58,7 @@ class Orm:
                 self.database.uitvoeren(ligplaats.sql, ligplaats.valuelist)
             for woonplaats in self.woonplaatsen:
                 woonplaats.insert()
-                print self.database.uitvoeren(woonplaats.sql, woonplaats.valuelist)
+                self.database.uitvoeren(woonplaats.sql, woonplaats.valuelist)
             for verblijfsobject in self.verblijfsobjecten:
                 verblijfsobject.insert()
                 self.database.uitvoeren(verblijfsobject.sql, verblijfsobject.valuelist)

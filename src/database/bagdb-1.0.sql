@@ -87,7 +87,7 @@ CREATE VIEW nummeraanduidingactueelbestaand AS
 DROP VIEW IF EXISTS openbareruimteactueel;
 DROP VIEW IF EXISTS openbareruimteactueelbestaand;
 
-DROP TABLE openbareruimte;
+DROP TABLE IF EXISTS openbareruimte;
 CREATE TABLE openbareruimte (
     identificatie character varying(16),
     aanduidingrecordinactief character varying(1),

@@ -7,7 +7,7 @@ __date__ = "$Jun 11, 2011 3:46:27 PM$"
  Auteur:       Stefan de Konink
 """
 
-import argparse
+import argparse #apt-get install python-argparse
 import sys
 import postgresdb
 import logger
@@ -58,7 +58,6 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='toon uitgebreide informatie tijdens het verwerken')
 
     # Initialiseer
-    print
     args = parser.parse_args()
     database = postgresdb.Database(args)
     log = logger.LogHandler(args)

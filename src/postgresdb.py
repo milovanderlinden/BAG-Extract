@@ -80,9 +80,11 @@ class Database:
             sys.exit()
 
     def uitvoeren(self, sql, parameters=None):
-        if parameters:
-            #print self.cursor.mogrify(sql,parameters)
-            self.cursor.execute(sql, parameters)
-        else:
-            self.cursor.execute(sql)
-        return self.cursor.rowcount
+        try:
+            if parameters:
+                self.cursor.execute(sql, parameters)
+            else:
+                self.cursor.execute(sql)
+        except (psycopg2.IntegrityError,), e:
+            print "fout %s voor query: %s" %(str(e), str(self.cursor.mogrify(sql,parameters)))
+            return self.cursor.rowcount
