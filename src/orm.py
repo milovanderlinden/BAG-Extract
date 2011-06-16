@@ -51,20 +51,30 @@ class Orm:
                                     #    print 'productcode'
                                     #else:
                                     #    print bagnode.localName
-            #self.database.verbind()
+            self.database.verbind()
             # Raymonds commit loop nodig!
-            #for ligplaats in self.ligplaatsen:
-            #    ligplaats.insert()
-            #    self.database.uitvoeren(ligplaats.sql,ligplaats.valuelist)
-            print self.ligplaatsen
-            print self.woonplaatsen
-            print self.verblijfsobjecten
-            print self.openbareRuimten
-            print self.nummeraanduidingen
-            print self.standplaatsen
-            print self.panden
-            return self
-
+            for ligplaats in self.ligplaatsen:
+                ligplaats.insert()
+                self.database.uitvoeren(ligplaats.sql, ligplaats.valuelist)
+            for woonplaats in self.woonplaatsen:
+                woonplaats.insert()
+                print self.database.uitvoeren(woonplaats.sql, woonplaats.valuelist)
+            for verblijfsobject in self.verblijfsobjecten:
+                verblijfsobject.insert()
+                self.database.uitvoeren(verblijfsobject.sql, verblijfsobject.valuelist)
+            for openbareruimte in self.openbareRuimten:
+                openbareruimte.insert()
+                self.database.uitvoeren(openbareruimte.sql, openbareruimte.valuelist)
+            for nummeraanduiding in self.nummeraanduidingen:
+                nummeraanduiding.insert()
+                self.database.uitvoeren(nummeraanduiding.sql, nummeraanduiding.valuelist)
+            for standplaats in self.standplaatsen:
+                standplaats.insert()
+                self.database.uitvoeren(standplaats.sql, standplaats.valuelist)
+            for pand in self.panden:
+                pand.insert()
+                self.database.uitvoeren(pand.sql, pand.valuelist)
+            self.database.connection.commit()
         # Leveringsinformatie
         if node.localName == 'BAG-Extract-Levering':
             return 'levering'

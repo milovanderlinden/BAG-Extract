@@ -12,6 +12,7 @@ import sys
 import postgresdb
 import logger
 import BAGFileReader
+from time import gmtime, strftime
 
 nogui = False
 try:
@@ -27,8 +28,22 @@ class BAGParser(argparse.ArgumentParser):
         sys.exit(2)
 
 def main():
+    """
+    Voorbeelden: 
+        1. Initialiseer een database:
+            python BAG.py -H localhost -d bag -U postgres -W postgres -c
+
+        2. Importeer een extract in de database:
+            python BAG.py -H localhost -d bag -U postgres -W postgres -e 9999STA01052011-000002.xml
+
+            of
+
+            python BAG.py -H localhost -d bag -U postgres -W postgres -e 9999STA01052011.zip
+
+    """
+
     parser = BAGParser(description='BAG Extract, commandline tool voor het verwerken van BAG bestanden',
-        epilog="LET OP: configureer de database in BAG.conf")
+        epilog="Configureer de database in BAG.conf of geef de database parameters op")
     parser.add_argument('-c', '--dbinit', action='store_true', help='wist oude tabellen en maakt nieuw tabellen')
     parser.add_argument('-d', '--database', metavar='BAG', help='database naam')
     parser.add_argument('-e', '--extract', metavar='bestand', help='neemt een pad naar een extract en laadt deze')
@@ -41,6 +56,7 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='toon uitgebreide informatie tijdens het verwerken')
 
     # Initialiseer
+    print
     args = parser.parse_args()
     database = postgresdb.Database(args)
     log = logger.LogHandler(args)
@@ -61,6 +77,7 @@ def main():
         #Verwerkt levering, extract en mutatie
         myreader = BAGFileReader.BAGFileReader(args.extract, args)
         myreader.process()
+        print strftime("%Y-%m-%d %H:%M:%S", gmtime())
         sys.exit()
     else:
         if nogui:
@@ -74,4 +91,5 @@ def main():
             app.MainLoop()
 
 if __name__ == "__main__":
+    print strftime("%Y-%m-%d %H:%M:%S", gmtime())
     main()

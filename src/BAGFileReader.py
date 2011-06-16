@@ -22,7 +22,7 @@ class BAGFileReader:
 
     def process(self):
         if zipfile.is_zipfile(self.file):
-            self.zip = zipfile.ZipFile(self.file)
+            self.zip = zipfile.ZipFile(self.file, "r")
             self.readzipfile()
         else:
             zipfilename = os.path.basename(self.file).split('.')
@@ -41,7 +41,6 @@ class BAGFileReader:
                 self.log.log(name)
                 xml = parse(StringIO(tzip.read(name)))
                 self.processXML(name, xml)
-                #self.log.log(xml)
             elif ext[1] == 'zip':
                 self.log.log(name)
                 self.readzipstring(StringIO(tzip.read(name)))
@@ -57,7 +56,6 @@ class BAGFileReader:
                 self.log.log(nested)
                 xml = parse(StringIO(tzip.read(nested)))
                 self.processXML(nested, xml)
-                #self.log.log(xml)
             elif ext[1] == 'zip':
                 self.log.log(nested)
                 self.readzipstring(StringIO(tzip.read(nested)))

@@ -1,3 +1,5 @@
+__author__ = "Matthijs van der Deijl"
+__date__ = "$Jun 11, 2011 3:46:27 PM$"
 #------------------------------------------------------------------------------
 # Naam:         Objecten.py
 # Omschrijving: Classes voor de BAG-objecten
@@ -14,7 +16,7 @@
 #
 # Auteurs:       Matthijs van der Deijl, Milo van der Linden
 #
-# Versie:       1,8
+# Versie:       1.8
 #
 # Versie:       1.7
 #               - objecttype LPL vervangen door LIG
@@ -41,7 +43,8 @@
 #------------------------------------------------------------------------------
 
 import ogr
-
+import datetime
+import time
 #from sqlalchemy.ext.declarative import declarative_base
 #Base = declarative_base()
 # TODO: Testen met sqlalchemy en impact bepalen
@@ -61,12 +64,36 @@ def getText(nodelist):
             rc = rc + node.data
     return rc
 
+def getDate(node):
+    """
+    Maak een datum object van een XML datum/tijd
+    BAG Datum/tijd is in het formaat JJJJMMDDUUMMSSmm
+    Deze functie genereert een datum van de BAG:DatumTijd
+    """
+    _text = getText(node.childNodes)
+    if len(_text) == 16:
+        bagdatumtijd = _text[:-2]
+        return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d%H%M%S")[0:6])
+    elif len(_text) == 8:
+        bagdatumtijd = _text
+        return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d")[0:6])
+
 def getTimestamp(node):
     """
     Maak een datum/tijd object van een XML datum/tijd
+    BAG Datum/tijd is in het formaat JJJJMMDDUUMMSSmm
+    Deze functie genereert een timestamp van de BAG:DatumTijd
     """
-    tmp_datetime = gettext(node.childNodes).split('+')
-    return datetime.datetime(*time.strptime(tmp_datetime[0], "%Y-%m-%dT%H:%M:%S")[0:6])
+    _text = getText(node.childNodes)
+    if len(_text) == 16:
+        bagdatumtijd = _text[:-2]
+        return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d%H%M%S")[0:6])
+    elif len(_text) == 8:
+        bagdatumtijd = _text
+        return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d")[0:6])
+
+    #tmp_datetime = gettext(node.childNodes).split('+')
+    #return datetime.datetime(*time.strptime(tmp_datetime[0], "%Y-%m-%dT%H:%M:%S")[0:6])
 
 class Tijdvakgeldigheid():
     """
@@ -80,9 +107,9 @@ class Tijdvakgeldigheid():
         self.begindatum = None
         for node in xmlnode.childNodes:
             if node.localName == 'begindatumTijdvakGeldigheid':
-                self.begindatum = getText(node.childNodes)
+                self.begindatum = getDate(node)
             if node.localName == 'einddatumTijdvakGeldigheid':
-                self.einddatum = getText(node.childNodes)
+                self.einddatum = getDate(node)
     def __repr__(self):
        return "<Tijdvakgeldigheid('%s','%s')>" % (self.begindatum, self.einddatum)
 
@@ -118,15 +145,20 @@ class GerelateerdeWoonplaats():
     """
     BAG sub-klasse.
     """
-    def __init__(self,xmlnode):
-        self.tag = "bag_LVC:gerelateerdeWoonplaats"
-        self.naam = "gerelateerdeWoonplaats"
-        self.type = ''
-        for node in xmlnode.childNodes:
-            if node.localName == 'identificatie':
-                self.identificatie = getText(node.childNodes)
+    def __init__(self,xmlnode=None):
+        if xmlnode:
+            self.tag = "bag_LVC:gerelateerdeWoonplaats"
+            self.naam = "gerelateerdeWoonplaats"
+            self.type = ''
+        if xmlnode:
+            for node in xmlnode.childNodes:
+                if node.localName == 'identificatie':
+                    self.identificatie = getText(node.childNodes)
+        else:
+            self.identificatie = None
+
     def __repr__(self):
-       return "<GerelateerdeWoonplaats('%s')>" % (self.identificatie,)
+        return "<GerelateerdeWoonplaats('%s')>" % (self.identificatie,)
 
 class GerelateerdeAdressen():
     """
@@ -156,7 +188,7 @@ class Bron():
         self.type = ''
         for node in xmlnode.childNodes:
             if node.localName == 'documentdatum':
-                self.documentdatum = getText(node.childNodes)
+                self.documentdatum = getDate(node)
             if node.localName == 'documentnummer':
                 self.documentnummer = getText(node.childNodes)
     def __repr__(self):
@@ -196,15 +228,39 @@ class OpenbareRuimte(Base):
                 self.type = getText(node.childNodes)
             if node.localName == 'gerelateerdeWoonplaats':
                 self.gerelateerdeWoonplaats = GerelateerdeWoonplaats(node)
-
     def __repr__(self):
        return "<OpenbareRuimte('%s','%s', '%s', '%s')>" % (self.identificatie, self.naam, self.tijdvakgeldigheid, self.bron)
 
+    def insert(self):
+        self.sql = """INSERT INTO openbareruimte (
+            identificatie,
+            aanduidingrecordinactief,
+            aanduidingrecordcorrectie,
+            officieel,
+            inonderzoek,
+            documentnummer,
+            documentdatum,
+            openbareruimtenaam,
+            openbareruimtestatus,
+            openbareruimtetype,
+            gerelateerdewoonplaats,
+            begindatum,
+            einddatum)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        self.valuelist = (self.identificatie, self.inactief, \
+            self.correctie, self.officieel, self.inonderzoek, \
+            self.bron.documentnummer, self.bron.documentdatum, \
+            self.naam, self.type, self.status, self.gerelateerdeWoonplaats.identificatie,self.tijdvakgeldigheid.begindatum, self.tijdvakgeldigheid.einddatum)
+            
 class Nummeraanduiding(Base):
     def __init__(self,xmlnode):
         self.tag = "bag_LVC:Nummeraanduiding"
         self.naam = "Nummeraanduiding"
         self.type = 'NUM'
+        self.huisletter = None
+        self.huisnummertoevoeging = None
+        self.gerelateerdeWoonplaats = GerelateerdeWoonplaats()
+        self.postcode = None
         for node in xmlnode.childNodes:
             if node.localName == 'bron':
                 self.bron = Bron(node)
@@ -222,6 +278,10 @@ class Nummeraanduiding(Base):
                 self.inonderzoek = getText(node.childNodes)
             if node.localName == 'huisnummer':
                 self.huisnummer = getText(node.childNodes)
+            if node.localName == 'huisletter':
+                self.huisletter = getText(node.childNodes)
+            if node.localName == 'huisnummertoevoeging':
+                self.huisnummertoevoeging = getText(node.childNodes)
             if node.localName == 'postcode':
                 self.postcode = getText(node.childNodes)
             if node.localName == 'nummeraanduidingStatus':
@@ -230,19 +290,78 @@ class Nummeraanduiding(Base):
                 self.typeAdresseerbaarObject = getText(node.childNodes)
             if node.localName == 'gerelateerdeOpenbareRuimte':
                 self.gerelateerdeOpenbareRuimte = GerelateerdeOpenbareRuimte(node)
-
     def __repr__(self):
        return "<Nummeraanduiding('%s', '%s', '%s')>" % (self.identificatie, self.tijdvakgeldigheid, self.bron)
 
+    def insert(self):
+        self.sql = """INSERT INTO nummeraanduiding (
+            identificatie,
+            aanduidingrecordinactief,
+            aanduidingrecordcorrectie,
+            officieel,
+            inonderzoek,
+            documentnummer,
+            documentdatum,
+            huisnummer,
+            huisletter,
+            huisnummertoevoeging,
+            postcode,
+            nummeraanduidingstatus,
+            typeadresseerbaarobject,
+            gerelateerdeopenbareruimte,
+            gerelateerdewoonplaats,
+            begindatum,
+            einddatum)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        self.valuelist = (self.identificatie, self.inactief, \
+            self.correctie, self.officieel, self.inonderzoek, \
+            self.bron.documentnummer, self.bron.documentdatum, \
+            self.huisnummer, self.huisletter, self.huisnummertoevoeging, \
+            self.postcode, self.status, self.typeAdresseerbaarObject, \
+            self.gerelateerdeOpenbareRuimte.identificatie, \
+            self.gerelateerdeWoonplaats.identificatie, self.tijdvakgeldigheid.begindatum, \
+            self.tijdvakgeldigheid.einddatum)
+
 class Standplaats(Base):
-    # TODO: Niet ontvangen in sample set, vragen om voorbeeld en verder uitwerken
-    def __init__(self):
+    def __init__(self,xmlnode):
         self.tag = "bag_LVC:Standplaats"
-        self.naam = "Standplaats"
-        self.type = 'STA'
+        self.naam = "standplaats"
+        self.type = 'LIG'
+        for node in xmlnode.childNodes:
+            if node.localName == 'gerelateerdeAdressen':
+                self.gerelateerdeAdressen = GerelateerdeAdressen(node)
+            if node.localName == 'bron':
+                self.bron = Bron(node)
+            if node.localName == 'tijdvakgeldigheid':
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+            if node.localName == 'identificatie':
+                self.identificatie = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordInactief':
+                self.inactief = getText(node.childNodes)
+            if node.localName == 'aanduidingRecordCorrectie':
+                self.correctie = getText(node.childNodes)
+            if node.localName == 'officieel':
+                self.officieel = getText(node.childNodes)
+            if node.localName == 'inOnderzoek':
+                self.inonderzoek = getText(node.childNodes)
+            if node.localName == 'standplaatsStatus':
+                self.status = getText(node.childNodes)
+            if node.localName == 'standplaatsGeometrie':
+                for geometrie in node.childNodes:
+                    gml = geometrie.toxml()
+                    self.geometrie = ogr.CreateGeometryFromGML(str(gml))
+
     def __repr__(self):
-       #return "<Standplaats('%s','%s', '%s', '%s')>" % (self.identificatie, self.naam, self.tijdvakgeldigheid, self.bron)
-       return "<Standplaats('%s','%s', '%s')>" % (self.tag, self.naam, self.type)
+       return "<Ligplaats('%s','%s', '%s', '%s')>" % (self.identificatie, self.gerelateerdeAdressen, self.tijdvakgeldigheid, self.bron)
+
+    def insert(self):
+        self.sql = """INSERT INTO standplaats (identificatie, aanduidingrecordinactief,
+            aanduidingrecordcorrectie, officieel, inonderzoek, documentnummer, documentdatum, hoofdadres,
+            standplaatsstatus, begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
+        self.valuelist = (self.identificatie, self.inactief, \
+            self.correctie, self.officieel, self.inonderzoek, self.bron.documentnummer, self.bron.documentdatum, \
+            self.gerelateerdeAdressen.hoofdadres, self.status, self.tijdvakgeldigheid.begindatum, \
+            self.tijdvakgeldigheid.einddatum, str(self.geometrie.ExportToWkt()), '28992')
 
 class Pand(Base):
     def __init__(self,xmlnode):
@@ -276,6 +395,26 @@ class Pand(Base):
     def __repr__(self):
        return "<Pand('%s','%s', '%s', '%s')>" % (self.identificatie, self.status, self.tijdvakgeldigheid, self.bron)
 
+    def insert(self):
+        self.sql = """INSERT INTO pand (
+            identificatie,
+            aanduidingrecordinactief,
+            aanduidingrecordcorrectie,
+            officieel,
+            inonderzoek,
+            documentnummer,
+            documentdatum,
+            pandstatus,
+            bouwjaar,
+            begindatum,
+            einddatum,
+            geometrie)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_GeomFromText(%s, %s))"""
+        self.valuelist = (self.identificatie, self.inactief, \
+            self.correctie, self.officieel, self.inonderzoek, self.bron.documentnummer, self.bron.documentdatum, \
+            self.status, self.bouwjaar, self.tijdvakgeldigheid.begindatum, \
+            self.tijdvakgeldigheid.einddatum, str(self.geometrie.ExportToWkt()), '28992')
+
 class Ligplaats(Base):
     """
     BAG Klasse Ligplaats
@@ -288,8 +427,6 @@ class Ligplaats(Base):
     #aanduidingrecordcorrectie = Column(String(5))
     #officieel = Column(String(1))
     #inonderzoek = Column(String(1))
-    #begindatumtijdvakgeldigheid = Column(String(16))
-    #einddatumtijdvakgeldigheid = Column(String(16))
     #documentnummer = Column(String(20))
     #documentdatum = Column(String(8))
     #hoofdadres  = Column(String(16))
@@ -332,13 +469,12 @@ class Ligplaats(Base):
    
     def insert(self):
         self.sql = """INSERT INTO ligplaats (identificatie, aanduidingrecordinactief,
-            aanduidingrecordcorrectie, officieel, inonderzoek, begindatumtijdvakgeldigheid,
-            einddatumtijdvakgeldigheid, documentnummer, documentdatum, hoofdadres,
-            ligplaatsstatus, begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
+            aanduidingrecordcorrectie, officieel, inonderzoek, documentnummer, documentdatum, hoofdadres,
+            ligplaatsstatus, begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
         self.valuelist = (self.identificatie, self.inactief, \
-            self.correctie, self.officieel, self.inonderzoek, self.tijdvakgeldigheid.begindatum, \
-            self.tijdvakgeldigheid.einddatum, self.bron.documentnummer, self.bron.documentdatum, \
-            self.gerelateerdeAdressen.hoofdadres, self.status, None, None, str(self.geometrie.ExportToWkt()), '28992')
+            self.correctie, self.officieel, self.inonderzoek, self.bron.documentnummer, self.bron.documentdatum, \
+            self.gerelateerdeAdressen.hoofdadres, self.status, self.tijdvakgeldigheid.begindatum, \
+            self.tijdvakgeldigheid.einddatum, str(self.geometrie.ExportToWkt()), '28992')
 
 #--------------------------------------------------------------------------------------------------------
 # Class         Verblijfsobject
@@ -351,6 +487,7 @@ class Verblijfsobject():
         self.tag = "bag_LVC:Verblijfsobject"
         self.naam = "Verblijfsobject"
         self.type = 'VBO'
+        self.correctie = None
         for node in xmlnode.childNodes:
             if node.localName == 'gerelateerdeAdressen':
                 self.gerelateerdeAdressen = GerelateerdeAdressen(node)
@@ -361,15 +498,14 @@ class Verblijfsobject():
             if node.localName == 'identificatie':
                 self.identificatie = getText(node.childNodes)
             if node.localName == 'aanduidingRecordInactief':
-                if getText(node.childNodes) <> 'N':
-                    self.inactief = True
+               self.inactief = getText(node.childNodes)
             if node.localName == 'aanduidingRecordCorrectie':
                 self.correcte = getText(node.childNodes)
             if node.localName == 'officieel':
                 self.officieel = getText(node.childNodes)
             if node.localName == 'inOnderzoek':
                 self.inonderzoek = getText(node.childNodes)
-            if node.localName == 'ligplaatsStatus':
+            if node.localName == 'verblijfsobjectStatus':
                 self.status = getText(node.childNodes)
             if node.localName == 'gebruiksdoelVerblijfsobject':
                 self.gebruiksdoel = getText(node.childNodes)
@@ -377,7 +513,7 @@ class Verblijfsobject():
                 self.oppervlakte = getText(node.childNodes)
             if node.localName == 'gerelateerdPand':
                 self.gerelateerdPand = GerelateerdPand(node)
-            if node.localName == 'ligplaatsGeometrie':
+            if node.localName == 'verblijfsobjectGeometrie':
                 # zet de geometrie om naar echte geometrie (ogr) voordeel is dat je dit naar
                 # shape, wkt, wkb etc. kunt exporteren
                 #self.geometrie = gettext(node.childNodes)
@@ -397,14 +533,14 @@ class Verblijfsobject():
         #print self
     def insert(self):
         self.sql = """INSERT INTO verblijfsobject (identificatie, aanduidingrecordinactief,
-            aanduidingrecordcorrectie, officieel, inonderzoek, begindatumtijdvakgeldigheid,
-            einddatumtijdvakgeldigheid, documentnummer, documentdatum, hoofdadres,
+            aanduidingrecordcorrectie, officieel, inonderzoek, documentnummer, documentdatum, hoofdadres,
+            gerelateerdpand,
             verblijfsobjectstatus, oppervlakteverblijfsobject,
-            begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
+            begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
         self.valuelist = (self.identificatie, self.inactief, \
-            self.correctie, self.officieel, self.inonderzoek, self.tijdvakgeldigheid.begindatum, \
-            self.tijdvakgeldigheid.einddatum, self.bron.documentnummer, self.bron.documentdatum, \
-            self.gerelateerdeAdressen.hoofdadres, self.status, self.oppervlakte, None, None, str(self.geometrie.ExportToWkt()), '28992')
+            self.correctie, self.officieel, self.inonderzoek, self.bron.documentnummer, self.bron.documentdatum, \
+            self.gerelateerdeAdressen.hoofdadres, self.gerelateerdPand.identificatie, self.status, self.oppervlakte, self.tijdvakgeldigheid.begindatum, \
+            self.tijdvakgeldigheid.einddatum, str(self.geometrie.ExportToWkt()), '28992')
 
 #--------------------------------------------------------------------------------------------------------
 # Class         Woonplaats
@@ -427,10 +563,9 @@ class Woonplaats():
             if node.localName == 'identificatie':
                 self.identificatie = getText(node.childNodes)
             if node.localName == 'aanduidingRecordInactief':
-                if getText(node.childNodes) <> 'N':
-                    self.inactief = True
+                self.inactief = getText(node.childNodes)
             if node.localName == 'aanduidingRecordCorrectie':
-                self.correcte = getText(node.childNodes)
+                self.correctie = getText(node.childNodes)
             if node.localName == 'officieel':
                 self.officieel = getText(node.childNodes)
             if node.localName == 'inOnderzoek':
@@ -441,24 +576,25 @@ class Woonplaats():
                 # zet de geometrie om naar echte geometrie (ogr) voordeel is dat je dit naar
                 # shape, wkt, wkb etc. kunt exporteren
                 #self.geometrie = gettext(node.childNodes)
+                multigeom = ogr.Geometry( type= ogr.wkbMultiPolygon )
                 for geometrie in node.childNodes:
                     gml = geometrie.toxml()
-                    #Dirty Hack, osgeo.ogr kan geen 2.5D verwerken, verwijder daarom de Z coordinaat
-                    gml = gml.replace(' 0.0', '')
-                    self.geometrie = ogr.CreateGeometryFromGML(str(gml))
+                    simplegeom = ogr.CreateGeometryFromGML(str(gml))
+                    multigeom.AddGeometryDirectly(simplegeom)
+                self.geometrie = multigeom
         #print self
     def __repr__(self):
        return "<Woonplaats('%s','%s', '%s')>" % (self.tag, self.naam, self.type)
     
     def insert(self):
         self.sql = """INSERT INTO woonplaats (identificatie, aanduidingrecordinactief,
-            aanduidingrecordcorrectie, officieel, inonderzoek, begindatumtijdvakgeldigheid,
-            einddatumtijdvakgeldigheid, documentnummer, documentdatum, woonplaatsnaam,
+            aanduidingrecordcorrectie, officieel, inonderzoek, documentnummer, documentdatum, woonplaatsnaam,
             woonplaatsstatus, 
-            begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
+            begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
         self.valuelist = (self.identificatie, self.inactief, \
-            self.correctie, self.officieel, self.inonderzoek, self.tijdvakgeldigheid.begindatum, \
-            self.tijdvakgeldigheid.einddatum, self.bron.documentnummer, self.bron.documentdatum, \
-            self.naam, self.status, None, None, str(self.geometrie.ExportToWkt()), '28992')
+            self.correctie, self.officieel, self.inonderzoek, self.bron.documentnummer, self.bron.documentdatum, \
+            self.naam, self.status, self.tijdvakgeldigheid.begindatum, \
+            self.tijdvakgeldigheid.einddatum, str(self.geometrie.ExportToWkt()), '28992')
+        #return self.sql, self.valuelist
 
 

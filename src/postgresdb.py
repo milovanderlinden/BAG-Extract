@@ -79,14 +79,9 @@ class Database:
             sys.exit()
 
     def uitvoeren(self, sql, parameters=None):
-        try:
-            if parameters:
-                self.cursor.execute(sql, parameters)
-            else:
-                self.cursor.execute(sql)
-            self.connection.commit()
-            return self.cursor.rowcount
-        except (psycopg2.Error,), foutmelding:
-            # TODO: rollback uitvoeren bij INSERT!
-            self.log.log("*** FOUT *** Kan SQL-statement '%s' niet uitvoeren:\n %s" %(sql, foutmelding))
-        #    return False
+        if parameters:
+            #print self.cursor.mogrify(sql,parameters)
+            self.cursor.execute(sql, parameters)
+        else:
+            self.cursor.execute(sql)
+        return self.cursor.rowcount
