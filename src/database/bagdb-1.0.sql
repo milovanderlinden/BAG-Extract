@@ -257,14 +257,14 @@ CREATE TABLE woonplaats (
 
 --CREATE INDEX adresseerbaarobjectnevenadreskey ON adresseerbaarobjectnevenadres USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum, nevenadres);
 CREATE INDEX ligplaats_geom_idx ON ligplaats USING gist (geometrie);
-CREATE UNIQUE INDEX ligplaats_key ON ligplaats USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
+--CREATE UNIQUE INDEX ligplaats_key ON ligplaats USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
 CREATE UNIQUE INDEX ligplaats_oid ON ligplaats USING btree (oid);
-CREATE UNIQUE INDEX nummeraanduiding_key ON nummeraanduiding USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
+--CREATE UNIQUE INDEX nummeraanduiding_key ON nummeraanduiding USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
 CREATE INDEX nummeraanduiding_postcode ON nummeraanduiding USING btree (postcode);
-CREATE UNIQUE INDEX openbareruimte_key ON openbareruimte USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
+--CREATE UNIQUE INDEX openbareruimte_key ON openbareruimte USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
 CREATE INDEX openbareruimte_naam ON openbareruimte USING btree (openbareruimtenaam);
 CREATE INDEX pand_geom_idx ON pand USING gist (geometrie);
-CREATE UNIQUE INDEX pand_key ON pand USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
+--CREATE UNIQUE INDEX pand_key ON pand USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
 CREATE UNIQUE INDEX pand_oid ON pand USING btree (oid);
 CREATE INDEX standplaats_geom_idx ON standplaats USING gist (geometrie);
 --CREATE UNIQUE INDEX standplaats_key ON standplaats USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
@@ -273,7 +273,7 @@ CREATE UNIQUE INDEX standplaats_oid ON standplaats USING btree (oid);
 CREATE INDEX verblijfsobject_punt_idx ON verblijfsobject USING gist (punt);
 CREATE INDEX verblijfsobject_vlak_idx ON verblijfsobject USING gist (vlak);
 --CREATE UNIQUE INDEX woonplaatskey ON woonplaats USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
-CREATE UNIQUE INDEX verblijfsobject_key ON verblijfsobject USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
+--CREATE UNIQUE INDEX verblijfsobject_key ON verblijfsobject USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
 CREATE UNIQUE INDEX verblijfsobject_oid ON verblijfsobject USING btree (oid);
 --CREATE INDEX verblijfsobjectpandkey ON verblijfsobjectpand USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum, gerelateerdpand);
 
