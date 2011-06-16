@@ -267,7 +267,7 @@ CREATE INDEX pand_geom_idx ON pand USING gist (geometrie);
 CREATE UNIQUE INDEX pand_key ON pand USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
 CREATE UNIQUE INDEX pand_oid ON pand USING btree (oid);
 CREATE INDEX standplaats_geom_idx ON standplaats USING gist (geometrie);
-CREATE UNIQUE INDEX standplaats_key ON standplaats USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
+--CREATE UNIQUE INDEX standplaats_key ON standplaats USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum);
 CREATE UNIQUE INDEX standplaats_oid ON standplaats USING btree (oid);
 --CREATE INDEX verblijfsobjectgebruiksdoelkey ON verblijfsobjectgebruiksdoel USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum, gebruiksdoelverblijfsobject);
 CREATE INDEX verblijfsobject_punt_idx ON verblijfsobject USING gist (punt);
