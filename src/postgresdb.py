@@ -1,7 +1,8 @@
 __author__="Matthijs van der Deijl"
 __date__ ="$Dec 09, 2009 00:00:01 AM$"
 
-""" Naam:         libDatabase.py
+"""
+ Naam:         libDatabase.py
  Omschrijving: Generieke functies voor databasegebruik binnen BAG Extract+
  Auteur:       Matthijs van der Deijl
 

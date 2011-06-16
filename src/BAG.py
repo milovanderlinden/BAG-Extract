@@ -1,11 +1,11 @@
 __author__ = "Stefan de Konink"
 __date__ = "$Jun 11, 2011 3:46:27 PM$"
 
-#------------------------------------------------------------------------------
-# Naam:         BAG.py
-# Omschrijving: Universe starter voor de applicatie, console als grafisch
-# Auteur:       Stefan de Konink
-#------------------------------------------------------------------------------
+"""
+ Naam:         BAG.py
+ Omschrijving: Universe starter voor de applicatie, console als grafisch
+ Auteur:       Stefan de Konink
+"""
 
 import argparse
 import sys
@@ -40,15 +40,17 @@ def main():
 
             python BAG.py -H localhost -d bag -U postgres -W postgres -e 9999STA01052011.zip
 
+        Theoretisch is het mogelijk de hele bag in te lezen vanuit de "hoofd" zip, maar dit is nog niet getest op
+        geheugen-problemen.
+
     """
 
     parser = BAGParser(description='BAG Extract, commandline tool voor het verwerken van BAG bestanden',
         epilog="Configureer de database in BAG.conf of geef de database parameters op")
     parser.add_argument('-c', '--dbinit', action='store_true', help='wist oude tabellen en maakt nieuw tabellen')
     parser.add_argument('-d', '--database', metavar='BAG', help='database naam')
-    parser.add_argument('-e', '--extract', metavar='bestand', help='neemt een pad naar een extract en laadt deze')
+    parser.add_argument('-e', '--extract', metavar='bestand', help='neemt een pad naar een bestand en importeert deze in de database')
     parser.add_argument('-H', '--host', metavar='localhost', help='database host')
-    #parser.add_argument('-m', '--mutatie', metavar='bestand', help='neemt een pad naar een mutatie en laadt deze')
     parser.add_argument('-U', '--username', metavar='postgres', help='database gebruiker')
     parser.add_argument('-p', '--port', metavar='5432', help='database poort')
     parser.add_argument('-W', '--password', metavar='postgres', help='wachtwoord voor postgres')
@@ -60,21 +62,11 @@ def main():
     args = parser.parse_args()
     database = postgresdb.Database(args)
     log = logger.LogHandler(args)
-    
-    #bagObjecten = []
-    #bagObjecten.append(libBAG.Woonplaats())
-    #bagObjecten.append(libBAG.OpenbareRuimte())
-    #bagObjecten.append(libBAG.Nummeraanduiding())
-    #bagObjecten.append(libBAG.Ligplaats())
-    #bagObjecten.append(libBAG.Standplaats())
-    #bagObjecten.append(libBAG.Verblijfsobject())
-    #bagObjecten.append(libBAG.Pand())
 
     if args.dbinit:
         database.initialiseer('database/bagdb-1.0.sql')
         sys.exit()
     elif args.extract:
-        #Verwerkt levering, extract en mutatie
         myreader = BAGFileReader.BAGFileReader(args.extract, args)
         myreader.process()
         print strftime("%Y-%m-%d %H:%M:%S", gmtime())
