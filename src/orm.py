@@ -9,7 +9,6 @@ class Orm:
         self.args = args
         self.database = postgresdb.Database(args)
     def getDocument(self, node):
-        #print node.localName
         self.ligplaatsen = []
         self.woonplaatsen = []
         self.verblijfsobjecten = []
@@ -26,7 +25,6 @@ class Orm:
                 for child in antwoord.childNodes:
                     if child.localName == "vraag":
                         vraag = child
-                        #print 'vraag'
                     elif child.localName == "producten":
                         producten = child
                         for productnode in producten.childNodes:
@@ -46,11 +44,7 @@ class Orm:
                                         self.standplaatsen.append(Objecten.Standplaats(bagnode))
                                     if bagnode.localName == 'Pand':
                                         self.panden.append(Objecten.Pand(bagnode))
-                                    #elif bagnode.localName == 'productcode':
-                                        #print gettext(bagnode.childNodes)
-                                    #    print 'productcode'
-                                    #else:
-                                    #    print bagnode.localName
+
             self.database.verbind()
             # Raymonds commit loop nodig!
             for ligplaats in self.ligplaatsen:

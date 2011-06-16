@@ -166,7 +166,6 @@ class GerelateerdeAdressen():
     Collectie van gerelateerde adressen
     """
     def __init__(self,xmlnode):
-        #print 'GerelateerdeAdressen __init__'
         self.tag = "bag_LVC:gerelateerdeAdressen"
         self.naam = "gerelateerdeAdressen"
         self.type = ''
@@ -482,8 +481,6 @@ class Ligplaats(Base):
 #--------------------------------------------------------------------------------------------------------
 class Verblijfsobject():
     def __init__(self,xmlnode):
-        #print 'ligplaats __init__'
-        #print xmlnode
         self.tag = "bag_LVC:Verblijfsobject"
         self.naam = "Verblijfsobject"
         self.type = 'VBO'
@@ -520,8 +517,6 @@ class Verblijfsobject():
                 for geometrie in node.childNodes:
                     gml = geometrie.toxml()
                     _geom = ogr.CreateGeometryFromGML(str(gml))
-                    print _geom.GetGeometryName()
-                    #print _geom
                     if _geom.GetGeometryName() <> 'POINT': #polygon!
                         #Gebruik de centroide van de geometry
                         vlak = _geom
@@ -561,8 +556,6 @@ class Verblijfsobject():
 #--------------------------------------------------------------------------------------------------------
 class Woonplaats():
     def __init__(self, xmlnode):
-        #print 'Woonplaats __init__'
-        #print xmlnode
         self.tag = "bag_LVC:Woonplaats"
         self.naam = "Woonplaats"
         self.type = 'WPL'
@@ -598,7 +591,7 @@ class Woonplaats():
                     else:
                         multigeom.AddGeometryDirectly(simplegeom)
                 self.geometrie = multigeom
-        #print self
+
     def __repr__(self):
        return "<Woonplaats('%s','%s', '%s')>" % (self.tag, self.naam, self.type)
     

@@ -28,7 +28,6 @@ class Database:
         # Lees de configuratie uit BAG.conf
         self.args = args
         self.log = logger.LogHandler(args)
-        #print args
         if args.database:
             self.database = args.database
         else:
@@ -75,8 +74,7 @@ class Database:
             self.cursor = self.connection.cursor()
             self.log.log("verbonden met database %s" %(self.database))
         except Exception, e:
-            print str(e)
-            print("fout: kan geen verbinding maken met database %s" %(self.database))
+            print("fout %s: kan geen verbinding maken met database %s" %(str(e),self.database))
             sys.exit()
 
     def uitvoeren(self, sql, parameters=None):
