@@ -6,7 +6,7 @@ import logger
 import orm
 import os
 from xml.dom.minidom import parse
-
+#from lxml import etree
 try:
   from cStringIO import StringIO
 except:
@@ -33,6 +33,7 @@ class BAGFileReader:
             #controleer of het dan een xml bestand is
             if ext == 'xml':
                 xml = parse(self.file)
+                #xml = etree.parse (self.file)
                 self.processXML(zipfilename[0],xml)
 
     def readDir(self):
@@ -49,6 +50,7 @@ class BAGFileReader:
                         if ext == 'xml':
                             print each
                             xml = parse(_file)
+                            #xml = etree.parse (_file)
                             self.processXML(zipfilename[0],xml)
 
     def readzipfile(self):
@@ -58,6 +60,7 @@ class BAGFileReader:
             if ext[1] == 'xml':
                 self.log.log(naam)
                 xml = parse(StringIO(tzip.read(naam)))
+                #xml = etree.parse (StringIO(tzip.read(naam)))
                 self.processXML(naam, xml)
             elif ext[1] == 'zip':
                 self.log.log(naam)
@@ -73,6 +76,7 @@ class BAGFileReader:
             if ext[1] == 'xml':
                 self.log.log(nested)
                 xml = parse(StringIO(tzip.read(nested)))
+                #xml = etree.parse(StringIO(tzip.read(nested)))
                 self.processXML(nested, xml)
             elif ext[1] == 'zip':
                 self.log.log(nested)
@@ -83,6 +87,7 @@ class BAGFileReader:
     def processXML(self,naam, xml):
         self.log.log(naam)
         xmldoc = xml.documentElement
+        #xmldoc = xml.getroot()
         #de orm bepaalt of het een extract of een mutatie is
         self.orm.getDocument(xmldoc)
         #self.log.log(document)

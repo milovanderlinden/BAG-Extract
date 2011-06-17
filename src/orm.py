@@ -5,6 +5,16 @@ import Objecten
 import postgresdb
 
 class Orm:
+    # TODO:
+    # Ben tot hier gekomen met etree. node.localName kent alleen een representatief
+    # in de vorm van element.tag
+    # Maar hier zitten de namespaces in:
+    #
+    # print xml.getroot().tag
+    #   {http://www.kadaster.nl/schemas/bag-verstrekkingen/extract-deelbestand-lvc/v20090901}BAG-Extract-Deelbestand-LVC
+    #
+    # Deze moeten of gestript worden, of de functie die dit automatisch doet moet worden gevonden.
+
     def __init__(self, args):
         self.args = args
         self.database = postgresdb.Database(args)
