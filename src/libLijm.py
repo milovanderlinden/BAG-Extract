@@ -1,3 +1,4 @@
+
 import os
 from xml.dom import minidom
 
@@ -39,23 +40,22 @@ def bestandVerwerkExtractPad(log, pad, bagObjecten, appyield=None):
         return verwerkteBestanden
 
 def bestandVerwerkMutatiePad(log, pad, appyield=None):
-    # TODO: Deze 'log'variabelen moeten worden gebruikt of worden verwijderd, nu worden ze niet gebruikt
-    #verwerkteBestanden = 0
-    #wWPL = 0
-    #wOPR = 0
-    #wNUM = 0
-    #wLIG = 0
-    #wSTA = 0
-    #wVBO = 0
-    #wPND = 0
-    #nWPL = 0
-    #nOPR = 0
-    #nNUM = 0
-    #nLIG = 0
-    #nSTA = 0
-    #nVBO = 0
-    #nPND = 0
-    #tellerFout = 0
+    verwerkteBestanden = 0
+    wWPL = 0
+    wOPR = 0
+    wNUM = 0
+    wLIG = 0
+    wSTA = 0
+    wVBO = 0
+    wPND = 0
+    nWPL = 0
+    nOPR = 0
+    nNUM = 0
+    nLIG = 0
+    nSTA = 0
+    nVBO = 0
+    nPND = 0
+    tellerFout = 0
     # Loop door alle mutatiebestanden binnen de gekozen directory en verwerk deze
     for (root, subdirectories, files) in os.walk(pad):
         for subdirectoryNaam in subdirectories:
@@ -91,20 +91,20 @@ def bestandVerwerkMutatiePad(log, pad, appyield=None):
                                         bagObjectWijziging.leesUitXML(xmlWijziging[0].getElementsByTagName(bagObjectWijziging.tag())[0])
                                         bagObjectOrigineel.wijzigInDatabase(bagObjectWijziging)
                                         tellerWijzig += 1
-                                        #if bagObjectOrigineel.objectType() == "WPL":
-                                        #    wWPL += 1
-                                        #if bagObjectOrigineel.objectType() == "OPR":
-                                        #    wOPR += 1
-                                        #if bagObjectOrigineel.objectType() == "NUM":
-                                        #    wNUM += 1
-                                        #if bagObjectOrigineel.objectType() == "LIG":
-                                        #    wLIG += 1
-                                        #if bagObjectOrigineel.objectType() == "STA":
-                                        #    wSTA += 1
-                                        #if bagObjectOrigineel.objectType() == "VBO":
-                                        #    wVBO += 1
-                                        #if bagObjectOrigineel.objectType() == "PND":
-                                        #    wPND += 1
+                                        if bagObjectOrigineel.objectType() == "WPL":
+                                            wWPL += 1
+                                        if bagObjectOrigineel.objectType() == "OPR":
+                                            wOPR += 1
+                                        if bagObjectOrigineel.objectType() == "NUM":
+                                            wNUM += 1
+                                        if bagObjectOrigineel.objectType() == "LIG":
+                                            wLIG += 1
+                                        if bagObjectOrigineel.objectType() == "STA":
+                                            wSTA += 1
+                                        if bagObjectOrigineel.objectType() == "VBO":
+                                            wVBO += 1
+                                        if bagObjectOrigineel.objectType() == "PND":
+                                            wPND += 1
                                     if len(xmlNieuw) > 0:
                                         bagObjectNieuw.leesUitXML(xmlNieuw[0].getElementsByTagName(bagObjectNieuw.tag())[0])
                                         bagObjectNieuw.voegToeInDatabase()
@@ -112,25 +112,25 @@ def bestandVerwerkMutatiePad(log, pad, appyield=None):
                                         #if not bagObjectNieuw.levenscyclusCorrect:
                                         #    tellerFout += 1
                                         tellerNieuw += 1
-                                        #if bagObjectNieuw.objectType() == "WPL":
-                                        #    nWPL += 1
-                                        #if bagObjectNieuw.objectType() == "OPR":
-                                        #    nOPR += 1
-                                        #if bagObjectNieuw.objectType() == "NUM":
-                                        #    nNUM += 1
-                                        #if bagObjectNieuw.objectType() == "LIG":
-                                        #    nLIG += 1
-                                        #if bagObjectNieuw.objectType() == "STA":
-                                        #    nSTA += 1
-                                        #if bagObjectNieuw.objectType() == "VBO":
-                                        #    nVBO += 1
-                                        #if bagObjectNieuw.objectType() == "PND":
-                                        #    nPND += 1
+                                        if bagObjectNieuw.objectType() == "WPL":
+                                            nWPL += 1
+                                        if bagObjectNieuw.objectType() == "OPR":
+                                            nOPR += 1
+                                        if bagObjectNieuw.objectType() == "NUM":
+                                            nNUM += 1
+                                        if bagObjectNieuw.objectType() == "LIG":
+                                            nLIG += 1
+                                        if bagObjectNieuw.objectType() == "STA":
+                                            nSTA += 1
+                                        if bagObjectNieuw.objectType() == "VBO":
+                                            nVBO += 1
+                                        if bagObjectNieuw.objectType() == "PND":
+                                            nPND += 1
                                 if appyield is not None:
                                     appyield.Yield(True)
                             log.schrijfTimer("=> %d objecten toegevoegd, %d objecten gewijzigd" %(tellerNieuw, tellerWijzig))
                             xml.unlink()
-                            #verwerkteBestanden += 1
+                            verwerkteBestanden += 1
                         except Exception, foutmelding:
                             log("*** FOUT *** Fout in verwerking xml-bestand '%s':\n %s" %(xmlFileNaam, foutmelding))
                 log("")

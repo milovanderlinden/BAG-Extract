@@ -127,12 +127,10 @@ class Database:
     def maakIndex(self, naam, createSQL):
         return self.maakObject("Index", naam, "DROP INDEX %s" %(naam), createSQL)
 
-    def insert(self, sql, identificatie, parameters=None):
+
+    def insert(self, sql, parameters, identificatie):
         try:
-            if parameters:
-                self.cursor.execute(sql, parameters)
-            else:
-                self.cursor.execute(sql)
+            self.cursor.execute(sql, parameters)
         except (psycopg2.IntegrityError,), foutmelding:
             log("* Waarschuwing * Object %s niet opgeslagen: %s" %(identificatie, str(foutmelding)))
         except (psycopg2.Error,), foutmelding:
@@ -141,10 +139,7 @@ class Database:
 
     def execute(self, sql, parameters=None):
         try:
-            if parameters:
-                self.cursor.execute(sql, parameters)
-            else:
-                self.cursor.execute(sql)
+            self.cursor.execute(sql, parameters)
             self.connection.commit()
             return self.cursor.rowcount
         except (psycopg2.Error,), foutmelding:
@@ -178,10 +173,9 @@ class Database:
             
     def log(self, actie, bestand, logfile):
         self.controleerOfMaakLog()
-        dt = datetime.datetime.now()
-        sql  = "INSERT INTO BAGextractpluslog (datum, actie, bestand, logfile) VALUES (%s, %s, %s, %s);"
-        parameters = (dt.date(), str(actie), str(bestand), str(logfile))
-        self.execute(sql, parameters)
+        sql  = "INSERT INTO BAGextractpluslog (datum, actie, bestand, logfile) VALUES ('now', %s, %s, %s)"
+        inhoud = (actie, bestand, logfile,)
+        self.execute(sql, inhoud)
         
     def getLog(self):
         self.controleerOfMaakLog()
@@ -192,12 +186,9 @@ class Database:
         return rows
 
     def controleerTabel(self, tabel):
-        schema = 'public'
-        sql = "select exists(select * from information_schema.tables where table_schema=%s AND table_name=%s)"
-        parameters = (tabel,schema)
-        self.cursor.execute(sql, parameters)
-        if cur.fetchone()[0]:
-            return True
-        else:
+        self.cursor.execute("SELECT tablename FROM pg_tables WHERE tablename = %s", (tabel,))
+        rows = self.cursor.fetchall()
+        self.connection.commit()
+        if len(rows) == 0:
             return False
 

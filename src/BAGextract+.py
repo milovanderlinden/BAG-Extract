@@ -38,7 +38,7 @@ import os.path
 #import datetime
 
 import csv
-from xml.dom import minidom
+#from xml.dom import minidom
 #from ConfigParser import ConfigParser
 
 from libBAGextractPlusVersie import *
@@ -47,11 +47,7 @@ from libLog import *
 from libUnzip import *
 from libDatabase import *
 from libBAG import *
-
 from BAGraadpleeg import *
-
-# Globale variabele
-bagObjecten = []
 
 #------------------------------------------------------------------------------
 # BAGExtractPlus toont het hoofdscherm van de BAG Extract+ tool
@@ -60,9 +56,10 @@ class BAGExtractPlus(wx.Frame):
     # Constructor
     # Maakt het logscherm voor het tonen van de voortgang en resultaten van diverse acties en
     # initialiseert de menu's van waaruit alle functies worden aangeroepen.
-    def __init__(self, app):
+    def __init__(self, app, bagObjecten):
         wx.Frame.__init__(self, None, -1, 'BAG Extract+', size=(1000, 500))
         self.app = app
+        self.bagObjecten = bagObjecten
         
         self.CenterOnScreen()
         self.CreateStatusBar()
@@ -152,7 +149,7 @@ class BAGExtractPlus(wx.Frame):
     # Laad een BAG Extract in de database.
     #------------------------------------------------------------------------------    
     def bestandLaadExtractBestand(self, event):
-        for obj in bagObjecten:
+        for obj in self.bagObjecten:
             if not obj.controleerTabel():
                 dialoog = wx.MessageDialog(self,
                                            "1 of meerdere tabellen ontbreken in de database. Initialiseer eerst de database (zie database-menu).",
@@ -178,40 +175,9 @@ class BAGExtractPlus(wx.Frame):
                     break
 
             log.start(self, database, "Laad extract bestand", dirDialoog.GetPath())
-            verwerkteBestanden = 0
             start = time.clock()
-            # Loop door alle bestanden binnen de gekozen directory en verwerk deze
-            for (root, subdirectories, files) in os.walk(dirDialoog.GetPath()):
-                for subdirectoryNaam in subdirectories:
-                    # Sla de mutatiebestanden over in deze verwerking. Deze zijn
-                    # herkenbaar aan de aanduiding MUT in de naam.
-                    if not "MUT" in subdirectoryNaam:
-                        subdirectory = os.path.join(root, subdirectoryNaam)
-                        log(subdirectory)
-                        for xmlFileNaam in os.listdir(subdirectory):
-                            if xmlFileNaam == ".":
-                                break
-                            (naam,extensie) = os.path.splitext(xmlFileNaam)
-                            if extensie.upper() == ".XML":
-                                xmlFile = os.path.join(subdirectory, xmlFileNaam)
-                                log(xmlFileNaam + "...")
-                                log.startTimer()
-                                
-                                try:
-                                    xml = minidom.parse(xmlFile)
-                                    teller = 0
-                                    for bagObject in bagObjecten:
-                                        for xmlObject in xml.getElementsByTagName(bagObject.tag()):
-                                            bagObject.leesUitXML(xmlObject)
-                                            bagObject.voegToeInDatabase()
-                                            teller += 1
-                                            self.app.Yield(True)
-                                    log.schrijfTimer("=> %d objecten toegevoegd" %(teller))
-                                    xml.unlink()
-                                    verwerkteBestanden += 1
-                                except Exception, foutmelding:
-                                    log("*** FOUT *** Fout in verwerking xml-bestand '%s':\n %s" %(xmlFileNaam, foutmelding))
-                        log("")                    
+            verwerkteBestanden = bestandVerwerkExtractPad(log, dirDialoog.GetPath(), self.bagObjecten, self.app)
+
             if verwerkteBestanden == 0:
                 log("")
                 log("%s bevat geen extractbestanden" %(dirDialoog.GetPath()))
@@ -229,7 +195,7 @@ class BAGExtractPlus(wx.Frame):
     # Laad een BAG mutatiebestand in de database.
     #------------------------------------------------------------------------------    
     def bestandLaadMutatieBestand(self, event):
-        for obj in bagObjecten:
+        for obj in self.bagObjecten:
             if not obj.controleerTabel():
                 dialoog = wx.MessageDialog(self,
                                            "1 of meerdere tabellen ontbreken in de database. Initialiseer eerst de database (zie database-menu).",
@@ -254,100 +220,8 @@ class BAGExtractPlus(wx.Frame):
                     break
 
             log.start(self, database, "Laad mutatiebestand ", dirDialoog.GetPath())
-            verwerkteBestanden = 0
             start = time.clock()
-            wWPL = 0
-            wOPR = 0
-            wNUM = 0
-            wLIG = 0
-            wSTA = 0
-            wVBO = 0
-            wPND = 0
-            nWPL = 0
-            nOPR = 0
-            nNUM = 0
-            nLIG = 0
-            nSTA = 0
-            nVBO = 0
-            nPND = 0
-            tellerFout = 0
-            # Loop door alle mutatiebestanden binnen de gekozen directory en verwerk deze
-            for (root, subdirectories, files) in os.walk(dirDialoog.GetPath()):
-                for subdirectoryNaam in subdirectories:
-                    # De mutatiebestanden zijn herkenbaar aan de aanduiding MUT in de naam
-                    if "MUT" in subdirectoryNaam:
-                        subdirectory = os.path.join(root, subdirectoryNaam)
-                        log(subdirectory)
-                        for xmlFileNaam in os.listdir(subdirectory):
-                            if xmlFileNaam == ".":
-                                break
-                            (naam,extensie) = os.path.splitext(xmlFileNaam)
-                            if extensie.upper() == ".XML":
-                                xmlFile = os.path.join(subdirectory, xmlFileNaam)
-                                log(xmlFileNaam + "...")
-                                log.startTimer()
-                                
-                                try:
-                                    xml = minidom.parse(xmlFile)
-                                    tellerNieuw  = 0
-                                    tellerWijzig = 0
-                                    for xmlMutatie in xml.getElementsByTagName("product_LVC:Mutatie-product"):
-                                        xmlObjectType = xmlMutatie.getElementsByTagName("product_LVC:ObjectType")
-                                        if len(xmlObjectType) > 0:
-                                            bagObjectOrigineel = getBAGobjectBijType(getText(xmlObjectType[0].childNodes))
-                                            bagObjectWijziging = getBAGobjectBijType(getText(xmlObjectType[0].childNodes))
-                                            bagObjectNieuw     = getBAGobjectBijType(getText(xmlObjectType[0].childNodes))
-
-                                            xmlOrigineel = xmlMutatie.getElementsByTagName("product_LVC:Origineel")
-                                            xmlWijziging = xmlMutatie.getElementsByTagName("product_LVC:Wijziging")
-                                            xmlNieuw     = xmlMutatie.getElementsByTagName("product_LVC:Nieuw")
-                                            if len(xmlOrigineel) > 0 and bagObjectOrigineel and len(xmlWijziging) > 0 and bagObjectWijziging:
-                                                bagObjectOrigineel.leesUitXML(xmlOrigineel[0].getElementsByTagName(bagObjectOrigineel.tag())[0])
-                                                bagObjectWijziging.leesUitXML(xmlWijziging[0].getElementsByTagName(bagObjectWijziging.tag())[0])
-                                                bagObjectOrigineel.wijzigInDatabase(bagObjectWijziging)
-                                                tellerWijzig += 1
-                                                if bagObjectOrigineel.objectType() == "WPL":
-                                                    wWPL += 1
-                                                if bagObjectOrigineel.objectType() == "OPR":
-                                                    wOPR += 1
-                                                if bagObjectOrigineel.objectType() == "NUM":
-                                                    wNUM += 1
-                                                if bagObjectOrigineel.objectType() == "LIG":
-                                                    wLIG += 1
-                                                if bagObjectOrigineel.objectType() == "STA":
-                                                    wSTA += 1
-                                                if bagObjectOrigineel.objectType() == "VBO":
-                                                    wVBO += 1
-                                                if bagObjectOrigineel.objectType() == "PND":
-                                                    wPND += 1
-                                            if len(xmlNieuw) > 0:
-                                                bagObjectNieuw.leesUitXML(xmlNieuw[0].getElementsByTagName(bagObjectNieuw.tag())[0])
-                                                bagObjectNieuw.voegToeInDatabase()
-                                                #bagObjectNieuw.controleerLevenscyclus(toonResultaat=True)
-                                                #if not bagObjectNieuw.levenscyclusCorrect:
-                                                #    tellerFout += 1
-                                                tellerNieuw += 1
-                                                if bagObjectNieuw.objectType() == "WPL":
-                                                    nWPL += 1
-                                                if bagObjectNieuw.objectType() == "OPR":
-                                                    nOPR += 1
-                                                if bagObjectNieuw.objectType() == "NUM":
-                                                    nNUM += 1
-                                                if bagObjectNieuw.objectType() == "LIG":
-                                                    nLIG += 1
-                                                if bagObjectNieuw.objectType() == "STA":
-                                                    nSTA += 1
-                                                if bagObjectNieuw.objectType() == "VBO":
-                                                    nVBO += 1
-                                                if bagObjectNieuw.objectType() == "PND":
-                                                    nPND += 1
-                                        self.app.Yield(True)
-                                    log.schrijfTimer("=> %d objecten toegevoegd, %d objecten gewijzigd" %(tellerNieuw, tellerWijzig))
-                                    xml.unlink()
-                                    verwerkteBestanden += 1
-                                except Exception, foutmelding:
-                                    log("*** FOUT *** Fout in verwerking xml-bestand '%s':\n %s" %(xmlFileNaam, foutmelding))
-                        log("")
+            verwerkteBestanden = bestandVerwerkMutatiePad(log, dirDialoog.GetPath(), self.app)
 
             if verwerkteBestanden == 0:
                 log("")
@@ -944,10 +818,7 @@ class BAGExtractPlus(wx.Frame):
             log.start(self, database, "Initialiseren van de BAG Extract+ database", "")
             database.log("Initialiseren van de BAG Extract+ database", "", log.logfileNaam)
             log("")
-            for bagObject in bagObjecten:
-                bagObject.maakTabel()
-                bagObject.maakIndex()
-                bagObject.maakViews()
+            dbInit(self.bagObjecten)
             log("")
             log.sluit()
 
@@ -956,8 +827,7 @@ class BAGExtractPlus(wx.Frame):
     #------------------------------------------------------------------------------    
     def databaseOnderhoudIndexen(self, event):
         log.start(self, database, "Opnieuw aanmaken van de indexen in de BAG Extract+ database", "")
-        for bagObject in bagObjecten:
-            bagObject.maakIndex()
+        dbMaakIndex(self.bagObjecten)
         log("")
         log.sluit()
         
@@ -1004,14 +874,3 @@ class BAGExtractPlus(wx.Frame):
         info.Copyright   += "eigen behoeften.                                      \n"
         info.WebSite = ("http://bag.vrom.nl", "Basisregistratie Adressen en Gebouwen")
         wx.AboutBox(info)
-
-app = wx.App(0)
-bagObjecten.append(Woonplaats())
-bagObjecten.append(OpenbareRuimte())
-bagObjecten.append(Nummeraanduiding())
-bagObjecten.append(Ligplaats())
-bagObjecten.append(Standplaats())
-bagObjecten.append(Verblijfsobject())
-bagObjecten.append(Pand())
-BAGExtractPlus(app)
-app.MainLoop()

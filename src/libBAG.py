@@ -1,42 +1,43 @@
-#------------------------------------------------------------------------------
-# Naam:         libBAG.py
-# Omschrijving: Classes voor de BAG-objecten
-#
-# Per BAG-objecttype (woonplaats, openbareruimte, nummeraanduiding,
-# ligplaats, standplaats, verblijfsobject, pand) is er een aparte class
-# met functionaliteit voor het lezen uit XML, het schrijven in de database
-# en het lezen uit de database. Ook bevat elke BAG-objectype-class functies
-# voor het initialiseren van de database (maken van tabellen, indexen en
-# views).
-# De BAG-objecttype-classes zijn afgeleid van de basisclass BAGobject.
-# Hierin is een BAG-object een verzameling van BAG-attributen met elk
-# hun eigen eigenschappen.
-#
-# Auteur:       Matthijs van der Deijl
-#
-# Versie:       1.7
-#               - objecttype LPL vervangen door LIG
-#               - objecttype SPL vervangen door STA
-# Datum:        11 maart 2011
-#
-# Versie:       1.6
-#               - Veldlengte voor tekstwaarde van geometrie verhoogt naar 1000000
-# Datum:        8 oktober 2010
-#
-# Versie:       1.3
-#               - Tag voor VerkorteOpenbareRuimteNaam verbeterd
-#               - GeomFromText vervangen door GeomFromEWKT
-#                 (dit voorkomt Warnings in de database logging)
-#               - Functie controleerTabel toegevoegd
-#               - Primaire index op tabel uniek gemaakt
-#               - Ophalen van waardes uit database met leestekens verbeterd
-# Datum:        28 december 2009
-#
-# Versie:       1.2
-# Datum:        24 november 2009
-#
-# Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
-#------------------------------------------------------------------------------
+"""
+ Naam:         libBAG.py
+ Omschrijving: Classes voor de BAG-objecten
+
+ Per BAG-objecttype (woonplaats, openbareruimte, nummeraanduiding,
+ ligplaats, standplaats, verblijfsobject, pand) is er een aparte class
+ met functionaliteit voor het lezen uit XML, het schrijven in de database
+ en het lezen uit de database. Ook bevat elke BAG-objectype-class functies
+ voor het initialiseren van de database (maken van tabellen, indexen en
+ views).
+ De BAG-objecttype-classes zijn afgeleid van de basisclass BAGobject.
+ Hierin is een BAG-object een verzameling van BAG-attributen met elk
+ hun eigen eigenschappen.
+
+ Auteur:       Matthijs van der Deijl
+
+ Versie:       1.7
+               - objecttype LPL vervangen door LIG
+               - objecttype SPL vervangen door STA
+ Datum:        11 maart 2011
+
+ Versie:       1.6
+               - Veldlengte voor tekstwaarde van geometrie verhoogt naar 1000000
+ Datum:        8 oktober 2010
+
+ Versie:       1.3
+               - Tag voor VerkorteOpenbareRuimteNaam verbeterd
+               - GeomFromText vervangen door GeomFromEWKT
+                 (dit voorkomt Warnings in de database logging)
+               - Functie controleerTabel toegevoegd
+               - Primaire index op tabel uniek gemaakt
+               - Ophalen van waardes uit database met leestekens verbeterd
+ Datum:        28 december 2009
+
+ Versie:       1.2
+ Datum:        24 november 2009
+
+ Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
+"""
+
 from libLog import *
 from libDatabase import *
 
@@ -103,6 +104,10 @@ class BAGattribuut:
     # Attribuut tag
     def tag(self):
         return self._tag
+
+    # Attribuut sqltype. Deze method kan worden overloaded
+    def sqltype(self):
+        return "VARCHAR(%d)" % (self._lengte)
     
     # Attribuut waarde. Deze method kan worden overloaded
     def waarde(self):
@@ -115,6 +120,10 @@ class BAGattribuut:
     # Geef aan dat het attribuut enkelvoudig is (maar 1 waarde heeft). Deze method kan worden overloaded.
     def enkelvoudig(self):
         return True
+    
+    # Initialiseer database
+    def sqlinit(self):
+        return ''
 
     # Initialisatie vanuit XML
     def leesUitXML(self, xml):
@@ -128,7 +137,42 @@ class BAGattribuut:
     # Print informatie over het attribuut op het scherm
     def schrijf(self):
         print "- %-27s: %s" %(self._naam, self._waarde)
-    
+
+#--------------------------------------------------------------------------------------------------------
+# Class         BAGenumAttribuut
+# Afgeleid van  BAGattribuut
+# Omschrijving  Bevat een of meerdere waarden binnen een restrictie 
+#--------------------------------------------------------------------------------------------------------
+class BAGenumAttribuut(BAGattribuut):
+    # Constructor
+    def __init__(self, lijst, naam, tag):
+        self._lijst   = lijst
+        self._lengte  = len(max(lijst, key=len))
+        self._naam    = naam
+        self._tag     = tag
+        self._waarde  = ""
+
+    # Attribuut sqltype. Deze method kan worden overloaded
+    def sqltype(self):
+        return self._naam
+
+    # Initialiseer database
+    def sqlinit(self):
+        return "CREATE TYPE %s AS ENUM ('%s')" % (self._naam, "', '".join(self._lijst))
+
+class BAGnumeriekAttribuut(BAGattribuut):
+    """
+     Class         BAGnumeriekAttribuut
+     Afgeleid van  BAGattribuut
+     Omschrijving  Bevat een numerieke waarde
+    """
+
+    def sqltype(self):
+        """
+         Attribuut sqltype. Deze method kan worden overloaded
+        """
+        return "NUMERIC(%d)" % (self._lengte)
+
 #--------------------------------------------------------------------------------------------------------
 # Class         BAGgeoAttribuut
 # Afgeleid van  BAGattribuut
@@ -364,27 +408,32 @@ class BAGobject:
         return "%s %s - %s" %(self.objectType(), self.identificatie.waarde(), self.adres())
     
     # Maak een tabel in de database
-    def maakTabel(self, database):
+    def maakTabel(self):
+        sqlinit = ""
         sql = ""
         inhoud = []
         for attribuut in self.attributen:
+            sqlinit += attribuut.sqlinit()
             if attribuut.enkelvoudig():
                 if sql == "":
-                    sql  = "CREATE TABLE " + self.naam() +  " (" + attribuut.naam() + " VARCHAR(%s)"
-                    inhoud.append(attribuut.lengte())
+                    sql  = "CREATE TABLE " + self.naam() + " (" + attribuut.naam() + " " + attribuut.sqltype()
                 else:
-                    sql += "," + attribuut.naam() + " VARCHAR(%s)"
-                    inhoud.append(attribuut.lengte())
-                    
+                    sql += "," + attribuut.naam() + " " + attribuut.sqltype()
         sql += ",begindatum DATE"
         sql += ",einddatum  DATE"
         sql += ")"
         if self.heeftGeometrie():
             sql += " WITH (OIDS=true)"
-        database.maakTabel(self.naam(), sql, inhoud)
+       
+        # TODO: Pijnlijke conclusie is hier dat maakTabel een DROP doet
+        #       en een TYPE op een tabel natuurlijk pas gedropt kan worden
+        #       nadat deze niet meer in gebruik is.
+        if sqlinit <> '':
+            database.execute(sqlinit)
+        database.maakTabel(self.naam(), sql)
 
         if self.heeftGeometrie():
-            inhoud = (self.naam().lower(), self.geometrie().soort(), self.geometrie().dimensie())
+            inhoud = (self.naam().lower(), self.geometrie().soort(), self.geometrie().dimensie(),)
             database.execute("SELECT AddGeometryColumn('public', %s, 'geometrie', 28992, %s, %s)", inhoud)
 
     # Controleer of een tabel bestaat in de database
@@ -491,7 +540,7 @@ class BAGobject:
         inhoud.append(database.datum(self.begindatumTijdvakGeldigheid.waarde()))
         inhoud.append(database.datum(self.einddatumTijdvakGeldigheid.waarde()))
         sql = "INSERT INTO " + self.naam() + " " + velden + " VALUES " + waardes
-        database.insert(sql, self.identificatie.waarde(),tuple(inhoud))
+        database.insert(sql, tuple(inhoud), self.identificatie.waarde(),)
 
         for attribuut in self.attributen:
             if not attribuut.enkelvoudig():
@@ -508,7 +557,7 @@ class BAGobject:
                               self.aanduidingRecordCorrectie.waarde(), \
                               self.begindatumTijdvakGeldigheid.waarde(), \
                               waarde,)
-                    database.insert(sql, self.identificatie.waarde(), inhoud)
+                    database.insert(sql, inhoud, self.identificatie.waarde())
 
     # Update het object in de database.
     # Alleen de volgende attributen kunnen hierbij wijzigen
@@ -749,7 +798,13 @@ class OpenbareRuimte(BAGobject):
         BAGobject.__init__(self)
         self.openbareRuimteNaam         = BAGattribuut(80, "openbareRuimteNaam", "bag_LVC:openbareRuimteNaam")
         self.openbareRuimteStatus       = BAGattribuut(80, "openbareRuimteStatus", "bag_LVC:openbareruimteStatus")
-        self.openbareRuimteType         = BAGattribuut(40, "openbareRuimteType", "bag_LVC:openbareRuimteType")
+        self.openbareRuimteType         = BAGenumAttribuut(['Weg',
+                                                            'Water',
+                                                            'Spoorbaan',
+                                                            'Terrein',
+                                                            'Kunstwerk',
+                                                            'Landschappelijk gebied',
+                                                            'Administratief gebied'], "openbareRuimteType", "bag_LVC:openbareRuimteType")
         self.gerelateerdeWoonplaats     = BAGattribuut(16, "gerelateerdeWoonplaats", "bag_LVC:gerelateerdeWoonplaats/bag_LVC:identificatie")
         self.verkorteOpenbareRuimteNaam = BAGattribuut(80, "verkorteOpenbareRuimteNaam", "nen5825:VerkorteOpenbareruimteNaam")
         self.attributen.append(self.openbareRuimteNaam)       
@@ -792,12 +847,14 @@ class OpenbareRuimte(BAGobject):
 class Nummeraanduiding(BAGobject):
     def __init__(self):
         BAGobject.__init__(self)
-        self.huisnummer                 = BAGattribuut( 5, "huisnummer", "bag_LVC:huisnummer")
-        self.huisletter                 = BAGattribuut( 5, "huisletter", "bag_LVC:huisletter")
+        self.huisnummer                 = BAGnumeriekAttribuut(5, "huisnummer", "bag_LVC:huisnummer")
+        self.huisletter                 = BAGattribuut( 1, "huisletter", "bag_LVC:huisletter")
         self.huisnummertoevoeging       = BAGattribuut( 4, "huisnummertoevoeging", "bag_LVC:huisnummertoevoeging")
         self.postcode                   = BAGattribuut( 6, "postcode", "bag_LVC:postcode")
         self.nummeraanduidingStatus     = BAGattribuut(80, "nummeraanduidingStatus", "bag_LVC:nummeraanduidingStatus")
-        self.typeAdresseerbaarObject    = BAGattribuut(20, "typeAdresseerbaarObject", "bag_LVC:typeAdresseerbaarObject")
+        self.typeAdresseerbaarObject    = BAGenumAttribuut(['Verblijfsobject',
+                                                            'Standplaats',
+                                                            'Ligplaats'], "typeAdresseerbaarObject", "bag_LVC:typeAdresseerbaarObject")
         self.gerelateerdeOpenbareRuimte = BAGattribuut(16, "gerelateerdeOpenbareRuimte", "bag_LVC:gerelateerdeOpenbareRuimte/bag_LVC:identificatie")
         self.gerelateerdeWoonplaats     = BAGattribuut(16, "gerelateerdeWoonplaats", "bag_LVC:gerelateerdeWoonplaats/bag_LVC:identificatie")
         self.attributen.append(self.huisnummer)       
@@ -844,12 +901,16 @@ class Nummeraanduiding(BAGobject):
         elif self.typeAdresseerbaarObject.waarde().lower() == "verblijfsobject":
             adresseerbaarObject = Verblijfsobject()
         
-        sql = "SELECT DISTINCT identificatie FROM %s WHERE hoofdadres=%s"
-        inhoud = (str(self.typeAdresseerbaarObject.waarde().lower()) + "actueel", str(self.identificatie.waarde()),) 
+        sql  = "SELECT DISTINCT identificatie"
+        sql += "  FROM " + self.typeAdresseerbaarObject.waarde().lower() + "actueel"
+        sql += " WHERE hoofdadres = %s"
+        inhoud = (self.identificatie.waarde(),)
         database.cursor.execute(sql, inhoud)
         if database.cursor.rowcount == 0:
-            sql = "SELECT DISTINCT identificatie FROM adresseerbaarobjectnevenadres WHERE nevenadres = %s"
-            inhoud = (str(self.identificatie.waarde()),)
+            sql  = "SELECT DISTINCT identificatie"
+            sql += "  FROM adresseerbaarobjectnevenadres"
+            sql += " WHERE nevenadres = %s"
+            inhoud = (self.identificatie.waarde(),)
             database.cursor.execute(sql, inhoud)
         if database.cursor.rowcount == 0:
             adresseerbaarObject = None
@@ -1016,8 +1077,14 @@ class Standplaats(BAGadresseerbaarObject):
 class Verblijfsobject(BAGadresseerbaarObject):
     def __init__(self):
         BAGadresseerbaarObject.__init__(self)
-        self.verblijfsobjectStatus       = BAGattribuut(       80, "verblijfsobjectStatus", "bag_LVC:verblijfsobjectStatus")
-        self.oppervlakteVerblijfsobject  = BAGattribuut(        6, "oppervlakteVerblijfsobject",  "bag_LVC:oppervlakteVerblijfsobject")
+        self.verblijfsobjectStatus       = BAGenumAttribuut(['Verblijfsobject gevormd', \
+                                                             'Niet gerealiseerd verblijfsobject', \
+                                                             'Verblijfsobject in gebruik (niet ingemeten)', \
+                                                             'Verblijfsobject in gebruik', \
+                                                             'Verblijfsobject ingetrokken', \
+                                                             'Verblijfsobject buiten gebruik'],
+                                                             "verblijfsobjectStatus", "bag_LVC:verblijfsobjectStatus")
+        self.oppervlakteVerblijfsobject  = BAGnumeriekAttribuut(6, "oppervlakteVerblijfsobject",  "bag_LVC:oppervlakteVerblijfsobject")
         self.verblijfsobjectGeometrie    = BAGpoint(          100, "verblijfsobjectGeometrie", "bag_LVC:verblijfsobjectGeometrie")
         self.gebruiksdoelVerblijfsobject = BAGrelatieAttribuut("verblijfsobjectgebruiksdoel",
                                                                50, "gebruiksdoelVerblijfsobject", "bag_LVC:gebruiksdoelVerblijfsobject")
@@ -1071,8 +1138,15 @@ class Verblijfsobject(BAGadresseerbaarObject):
 class Pand(BAGobject):
     def __init__(self):
         BAGobject.__init__(self)
-        self.pandStatus    = BAGattribuut(       80, "pandStatus", "bag_LVC:pandstatus")
-        self.bouwjaar      = BAGattribuut(        6, "bouwjaar", "bag_LVC:bouwjaar")
+        self.pandStatus    = BAGenumAttribuut(['Bouwvergunning verleend', \
+                                               'Niet gerealiseerd pand', \
+                                               'Bouw gestart', \
+                                               'Pand in gebruik (niet ingemeten)', \
+                                               'Pand in gebruik', \
+                                               'Sloopvergunning verleend', \
+                                               'Pand gesloopt', \
+                                               'Pand buiten gebruik'], "pandStatus", "bag_LVC:pandstatus")
+        self.bouwjaar      = BAGnumeriekAttribuut(4, "bouwjaar", "bag_LVC:bouwjaar")
         self.pandGeometrie = BAGpolygoon(3, 1000000, "pandGeometrie", "bag_LVC:pandGeometrie")
         self.attributen.append(self.pandStatus)       
         self.attributen.append(self.bouwjaar)       

@@ -12,9 +12,6 @@
 #
 # Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
 #------------------------------------------------------------------------------
-# TODO verwijder ongebruikte imports
-#import time, datetime
-#import sys
 
 from libBAGextractPlusVersie import *
 from libBAGconfiguratie import *
