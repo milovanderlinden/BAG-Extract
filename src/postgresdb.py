@@ -22,6 +22,7 @@ __date__ ="$Dec 09, 2009 00:00:01 AM$"
 """
 import psycopg2
 import logger
+from libBAGconfiguratie import *
 
 class Database:
     def __init__(self, args):

@@ -21,7 +21,10 @@ class BAGFileReader:
         self.orm = orm.Orm(args)
 
     def process(self):
-        if zipfile.is_zipfile(self.file):
+        # TODO: Verwerk een directory
+        if os.path.isdir(self.file) == True:
+            self.readDir()
+        elif zipfile.is_zipfile(self.file):
             self.zip = zipfile.ZipFile(self.file, "r")
             self.readzipfile()
         else:
@@ -32,23 +35,38 @@ class BAGFileReader:
                 xml = parse(self.file)
                 self.processXML(zipfilename[0],xml)
 
+    def readDir(self):
+        for each in os.listdir(self.file):
+            _file = os.path.join(self.file, each)
+            if zipfile.is_zipfile(_file):
+                self.zip = zipfile.ZipFile(_file, "r")
+                self.readzipfile()
+            else:
+                if os.path.isdir(_file) <> True:
+                    zipfilename = each.split('.')
+                    if len(zipfilename) == 2:
+                        ext = zipfilename[1]
+                        if ext == 'xml':
+                            print each
+                            xml = parse(_file)
+                            self.processXML(zipfilename[0],xml)
 
     def readzipfile(self):
         tzip = self.zip
-        for name in tzip.namelist():
-            ext = name.split('.')
+        for naam in tzip.namelist():
+            ext = naam.split('.')
             if ext[1] == 'xml':
-                self.log.log(name)
-                xml = parse(StringIO(tzip.read(name)))
-                self.processXML(name, xml)
+                self.log.log(naam)
+                xml = parse(StringIO(tzip.read(naam)))
+                self.processXML(naam, xml)
             elif ext[1] == 'zip':
-                self.log.log(name)
-                self.readzipstring(StringIO(tzip.read(name)))
+                self.log.log(naam)
+                self.readzipstring(StringIO(tzip.read(naam)))
             else:
-                self.log.log(name)
+                self.log.log(naam)
 
-    def readzipstring(self,name):
-        tzip = zipfile.ZipFile(name, "r")
+    def readzipstring(self,naam):
+        tzip = zipfile.ZipFile(naam, "r")
 
         for nested in tzip.namelist():
             ext = nested.split('.')
@@ -62,11 +80,11 @@ class BAGFileReader:
             else:
                 self.log.log(nested)
 
-    def processXML(self,file, xml):
-        self.log.log(file)
-        rootObj = xml.documentElement
+    def processXML(self,naam, xml):
+        self.log.log(naam)
+        xmldoc = xml.documentElement
         #de orm bepaalt of het een extract of een mutatie is
-        document = self.orm.getDocument(rootObj) 
-        self.log.log(document)
+        self.orm.getDocument(xmldoc)
+        #self.log.log(document)
         xml.unlink()
         

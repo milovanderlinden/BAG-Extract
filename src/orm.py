@@ -8,6 +8,7 @@ class Orm:
     def __init__(self, args):
         self.args = args
         self.database = postgresdb.Database(args)
+
     def getDocument(self, node):
         self.ligplaatsen = []
         self.woonplaatsen = []
@@ -24,6 +25,8 @@ class Orm:
                 antwoord = node.firstChild
                 for child in antwoord.childNodes:
                     if child.localName == "vraag":
+                        # TODO: Is het een idee om vraag als object ook af te
+                        # handelen en op te slaan
                         vraag = child
                     elif child.localName == "producten":
                         producten = child
@@ -46,7 +49,6 @@ class Orm:
                                         self.panden.append(Objecten.Pand(bagnode))
 
             self.database.verbind()
-            # Raymonds commit loop nodig!
             for ligplaats in self.ligplaatsen:
                 ligplaats.insert()
                 self.database.uitvoeren(ligplaats.sql, ligplaats.valuelist)

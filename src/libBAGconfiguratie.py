@@ -8,7 +8,9 @@
 #
 # Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
 #------------------------------------------------------------------------------
-import sys, os, os.path
+import sys
+import os
+
 
 from ConfigParser import ConfigParser
 
