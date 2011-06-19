@@ -189,6 +189,7 @@ CREATE TABLE verblijfsobject (
     documentdatum date,
     hoofdadres character varying(16),
     gerelateerdpand character varying(16),
+    gebruiksdoel character varying(50),
     verblijfsobjectstatus character varying(80),
     oppervlakteverblijfsobject character varying(6),
     begindatum date,

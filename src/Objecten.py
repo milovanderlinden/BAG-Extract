@@ -485,6 +485,7 @@ class Verblijfsobject():
         self.naam = "Verblijfsobject"
         self.type = 'VBO'
         self.correctie = None
+        self.gebruiksdoel = None
         for node in xmlnode.childNodes:
             if node.localName == 'gerelateerdeAdressen':
                 self.gerelateerdeAdressen = GerelateerdeAdressen(node)
@@ -542,12 +543,12 @@ class Verblijfsobject():
 
         self.sql = """INSERT INTO verblijfsobject (identificatie, aanduidingrecordinactief,
             aanduidingrecordcorrectie, officieel, inonderzoek, documentnummer, documentdatum, hoofdadres,
-            gerelateerdpand,
+            gerelateerdpand, gebruiksdoel,
             verblijfsobjectstatus, oppervlakteverblijfsobject,
-            begindatum, einddatum, punt, vlak) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s),ST_GeomFromText(%s,%s))"""
+            begindatum, einddatum, punt, vlak) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s),ST_GeomFromText(%s,%s))"""
         self.valuelist = (self.identificatie, self.inactief, \
             self.correctie, self.officieel, self.inonderzoek, self.bron.documentnummer, self.bron.documentdatum, \
-            self.gerelateerdeAdressen.hoofdadres, self.gerelateerdPand.identificatie, self.status, self.oppervlakte, self.tijdvakgeldigheid.begindatum, \
+            self.gerelateerdeAdressen.hoofdadres, self.gerelateerdPand.identificatie, self.gebruiksdoel, self.status, self.oppervlakte, self.tijdvakgeldigheid.begindatum, \
             self.tijdvakgeldigheid.einddatum, str(self.punt.ExportToWkt()), '28992', vlakval,'28992')
 
 #--------------------------------------------------------------------------------------------------------
