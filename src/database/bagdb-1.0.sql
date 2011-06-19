@@ -7,7 +7,8 @@ CREATE TABLE bagextractpluslog (
     actie character varying(1000),
     bestand character varying(1000),
     logfile character varying(1000)
-);*/
+);
+*/
 
 DROP TABLE IF EXISTS bagextractplus;
 CREATE TABLE bagextractplus (
@@ -278,3 +279,21 @@ CREATE INDEX verblijfsobject_vlak_idx ON verblijfsobject USING gist (vlak);
 CREATE UNIQUE INDEX verblijfsobject_oid ON verblijfsobject USING btree (oid);
 --CREATE INDEX verblijfsobjectpandkey ON verblijfsobjectpand USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum, gerelateerdpand);
 
+CREATE TABLE gemeente_woonplaats (
+id bigserial,
+woonplaatsnaam character varying(80),
+woonplaatscode character varying(4),
+begindatum_woonplaats date,
+einddatum_woonplaats date,
+gemeentenaam character varying(80),
+gemeentecode character varying(4),
+begindatum_gemeente date,
+aansluitdatum_gemeente date,
+bijzonderheden text,
+gemeentecode_nieuw character varying(4),
+eindatum_gemeente date,
+behandeld character varying(1),
+PRIMARY KEY (id)
+)WITH (
+  OIDS=TRUE
+);
