@@ -292,7 +292,7 @@ begindatum_gemeente date,
 aansluitdatum_gemeente date,
 bijzonderheden text,
 gemeentecode_nieuw character varying(4),
-eindatum_gemeente date,
+einddatum_gemeente date,
 behandeld character varying(1),
 PRIMARY KEY (id)
 )WITH (

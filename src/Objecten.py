@@ -70,13 +70,25 @@ def getDate(node):
     BAG Datum/tijd is in het formaat JJJJMMDDUUMMSSmm
     Deze functie genereert een datum van de BAG:DatumTijd
     """
-    _text = getText(node.childNodes)
-    if len(_text) == 16:
-        bagdatumtijd = _text[:-2]
-        return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d%H%M%S")[0:6])
-    elif len(_text) == 8:
-        bagdatumtijd = _text
-        return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d")[0:6])
+    if type(node) == str:
+        # Momenteel alleen voor de gemeente_woonplaats csv
+        _text = node
+        if len(_text) > 0:
+            if len(_text) == 10:
+                return datetime.datetime(*time.strptime(_text, "%d-%m-%Y")[0:6])
+            elif len(_text) == 8:
+                return datetime.datetime(*time.strptime(_text, "%Y%m%d")[0:6])
+        else:
+            return None
+
+    else:
+        _text = getText(node.childNodes)
+        if len(_text) == 16:
+            bagdatumtijd = _text[:-2]
+            return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d%H%M%S")[0:6])
+        elif len(_text) == 8:
+            bagdatumtijd = _text
+            return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d")[0:6])
 
 def getTimestamp(node):
     """
@@ -629,15 +641,15 @@ class GemeenteWoonplaats(Base):
             self.type = 'G_W'
             self.woonplaatsnaam = record[0]
             self.woonplaatscode = record[1]
-            self.begindatum_woonplaats = record[2]
-            self.einddatum_woonplaats = record[3]
+            self.begindatum_woonplaats = getDate(record[2])
+            self.einddatum_woonplaats = getDate(record[3])
             self.gemeentenaam = record[4]
             self.gemeentecode = record[5]
-            self.begindatum_gemeente = record[6]
-            self.aansluitdatum_gemeente = record[7]
+            self.begindatum_gemeente = getDate(record[6])
+            self.aansluitdatum_gemeente = getDate(record[7])
             self.bijzonderheden = record[8]
             self.gemeentecode_nieuw = record[9]
-            self.einddatum_gemeente = record[10]
+            self.einddatum_gemeente = getDate(record[10])
             self.behandeld = record[11]
 
     def __repr__(self):

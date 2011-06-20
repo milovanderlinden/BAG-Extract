@@ -21,20 +21,20 @@ class Orm:
 
     def getCSV(self, csvreader):
         self.gemeentewoonplaatsen = []
-        # TODO: Controleer of de eerste regel de verwachte headers bevat
         cols = csvreader.next()
         if (cols[0] == 'Woonplaats') and (cols[4] == 'Gemeente'):
             for record in csvreader:
                 if record[0]:
                     obj = Objecten.GemeenteWoonplaats(record)
                     self.gemeentewoonplaatsen.append(obj)
-                    print obj
-                
-        #self.database.verbind()
-        #for gemeentewoonplaats in self.gemeentewoonplaatsen:
-        #    gemeentewoonplaats.insert()
-        #    self.database.uitvoeren(gemeentewoonplaats.sql, gemeentewoonplaats.valuelist)
-
+            # Verwerk het bestand, lees gemeente_woonplaatsen in de database
+            self.database.verbind()
+            self.database.connection.set_client_encoding('LATIN1')
+            for gemeentewoonplaats in self.gemeentewoonplaatsen:
+                gemeentewoonplaats.insert()
+                self.database.uitvoeren(gemeentewoonplaats.sql, gemeentewoonplaats.valuelist)
+            self.database.connection.commit()
+            
     def getDocument(self, node):
         self.ligplaatsen = []
         self.woonplaatsen = []
