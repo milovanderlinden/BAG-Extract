@@ -614,36 +614,46 @@ class GemeenteWoonplaats(Base):
 
     def __init__(self,record):
         # TODO: De csv is niet volledig gevuld, controleer of een record wel het minimaal aantal objecten bevat.
+        # Woonplaats;Woonplaats code;Ingangsdatum WPL;Einddatum WPL;Gemeente;Gemeente code;
+        # Ingangsdatum nieuwe gemeente;Aansluitdatum;Bijzonderheden;Nieuwe code Gemeente;
+        #Gemeente beeindigd per;Behandeld;        Laatste WPL code:;3513
         if len(record) > 8:
             self.tag = "gem_LVC:GemeenteWoonplaats"
             self.naam = "gemeente_woonplaats"
             self.type = 'G_W'
-            self.woonplaats = record[0]
+            self.woonplaatsnaam = record[0]
             self.woonplaatscode = record[1]
-            self.gemeente = record[4]
+            self.begindatum_woonplaats = record[2]
+            self.einddatum_woonplaats = record[3]
+            self.gemeentenaam = record[4]
             self.gemeentecode = record[5]
+            self.begindatum_gemeente = record[6]
+            self.aansluitdatum_gemeente = record[7]
+            self.bijzonderheden = record[8]
+            self.gemeentecode_nieuw = record[9]
+            self.einddatum_gemeente = record[10]
+            self.behandeld = record[11]
 
     def __repr__(self):
-       return "<GemeenteWoonplaats('%s','%s', '%s', '%s')>" % (self.naam, self.woonplaatscode, self.gemeentecode)
+       return "<GemeenteWoonplaats('%s','%s', '%s')>" % (self.naam, self.woonplaatscode, self.gemeentecode)
 
     def insert(self):
-        self.sql = """INSERT INTO openbareruimte (
-            identificatie,
-            aanduidingrecordinactief,
-            aanduidingrecordcorrectie,
-            officieel,
-            inonderzoek,
-            documentnummer,
-            documentdatum,
-            openbareruimtenaam,
-            openbareruimtestatus,
-            openbareruimtetype,
-            gerelateerdewoonplaats,
-            begindatum,
-            einddatum)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-        self.valuelist = (self.identificatie, self.inactief, \
-            self.correctie, self.officieel, self.inonderzoek, \
-            self.bron.documentnummer, self.bron.documentdatum, \
-            self.naam, self.type, self.status, self.gerelateerdeWoonplaats.identificatie,self.tijdvakgeldigheid.begindatum, self.tijdvakgeldigheid.einddatum)
+        self.sql = """INSERT INTO gemeente_woonplaats (
+            woonplaatsnaam,
+            woonplaatscode,
+            begindatum_woonplaats,
+            einddatum_woonplaats,
+            gemeentenaam,
+            gemeentecode,
+            begindatum_gemeente,
+            aansluitdatum_gemeente,
+            bijzonderheden,
+            gemeentecode_nieuw,
+            einddatum_gemeente,
+            behandeld)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        self.valuelist = (self.woonplaatsnaam, self.woonplaatscode, self.begindatum_woonplaats, \
+            self.einddatum_woonplaats,self.gemeentenaam, self.gemeentecode, self.begindatum_gemeente, \
+            self.aansluitdatum_gemeente, self.bijzonderheden, self.gemeentecode_nieuw, self.einddatum_gemeente, \
+            self.behandeld)
 
