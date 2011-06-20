@@ -114,6 +114,6 @@ class BAGFileReader:
         # TODO: zorg voor de verwerking van het geparste csv bestand
         # Maak er gemeente_woonplaats objecten van overeenkomstig de nieuwe
         # tabel woonplaats_gemeente
-        myReader = csv.reader(fileobject, delimiter=';', quotechar='"')
+        myReader = csv.reader(fileobject, delimiter=';', quoting=csv.QUOTE_NONE)
         self.orm.getCSV(myReader)
         

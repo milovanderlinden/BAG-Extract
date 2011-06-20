@@ -25,7 +25,10 @@ class Orm:
         cols = csvreader.next()
         if (cols[0] == 'Woonplaats') and (cols[4] == 'Gemeente'):
             for record in csvreader:
-                self.gemeentewoonplaatsen.append(Objecten.GemeenteWoonplaats(record))
+                if record[0]:
+                    obj = Objecten.GemeenteWoonplaats(record)
+                    self.gemeentewoonplaatsen.append(obj)
+                    print obj
                 
         #self.database.verbind()
         #for gemeentewoonplaats in self.gemeentewoonplaatsen:

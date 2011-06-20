@@ -616,8 +616,14 @@ class GemeenteWoonplaats(Base):
         # TODO: De csv is niet volledig gevuld, controleer of een record wel het minimaal aantal objecten bevat.
         # Woonplaats;Woonplaats code;Ingangsdatum WPL;Einddatum WPL;Gemeente;Gemeente code;
         # Ingangsdatum nieuwe gemeente;Aansluitdatum;Bijzonderheden;Nieuwe code Gemeente;
-        #Gemeente beeindigd per;Behandeld;        Laatste WPL code:;3513
-        if len(record) > 8:
+        # Gemeente beeindigd per;Behandeld;        Laatste WPL code:;3513
+
+        # Dirty! Dit kan vast makkelijker, mijn python tekortkoming blijkt hier ;-)
+        emptylist = [None,None,None,None,None,None,None,None,None,None,None,None]
+        record.extend(emptylist)
+        # Stel de lengte van het record object in op 12
+        if record[0]:
+            #print record
             self.tag = "gem_LVC:GemeenteWoonplaats"
             self.naam = "gemeente_woonplaats"
             self.type = 'G_W'
@@ -635,7 +641,7 @@ class GemeenteWoonplaats(Base):
             self.behandeld = record[11]
 
     def __repr__(self):
-       return "<GemeenteWoonplaats('%s','%s', '%s')>" % (self.naam, self.woonplaatscode, self.gemeentecode)
+       return "<GemeenteWoonplaats('%s','%s', '%s')>" % (self.naam, self.gemeentecode, self.woonplaatscode)
 
     def insert(self):
         self.sql = """INSERT INTO gemeente_woonplaats (
