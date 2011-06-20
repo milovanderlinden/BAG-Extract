@@ -279,6 +279,7 @@ CREATE INDEX verblijfsobject_vlak_idx ON verblijfsobject USING gist (vlak);
 CREATE UNIQUE INDEX verblijfsobject_oid ON verblijfsobject USING btree (oid);
 --CREATE INDEX verblijfsobjectpandkey ON verblijfsobjectpand USING btree (identificatie, aanduidingrecordinactief, aanduidingrecordcorrectie, begindatum, gerelateerdpand);
 
+DROP TABLE IF EXISTS gemeente_woonplaats;
 CREATE TABLE gemeente_woonplaats (
 id bigserial,
 woonplaatsnaam character varying(80),

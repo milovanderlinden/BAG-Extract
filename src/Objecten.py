@@ -607,4 +607,43 @@ class Woonplaats():
             self.tijdvakgeldigheid.einddatum, str(self.geometrie.ExportToWkt()), '28992')
         #return self.sql, self.valuelist
 
+class GemeenteWoonplaats(Base):
+    """
+    Klasse Gemeente
+    """
+
+    def __init__(self,record):
+        # TODO: De csv is niet volledig gevuld, controleer of een record wel het minimaal aantal objecten bevat.
+        if len(record) > 8:
+            self.tag = "gem_LVC:GemeenteWoonplaats"
+            self.naam = "gemeente_woonplaats"
+            self.type = 'G_W'
+            self.woonplaats = record[0]
+            self.woonplaatscode = record[1]
+            self.gemeente = record[4]
+            self.gemeentecode = record[5]
+
+    def __repr__(self):
+       return "<GemeenteWoonplaats('%s','%s', '%s', '%s')>" % (self.naam, self.woonplaatscode, self.gemeentecode)
+
+    def insert(self):
+        self.sql = """INSERT INTO openbareruimte (
+            identificatie,
+            aanduidingrecordinactief,
+            aanduidingrecordcorrectie,
+            officieel,
+            inonderzoek,
+            documentnummer,
+            documentdatum,
+            openbareruimtenaam,
+            openbareruimtestatus,
+            openbareruimtetype,
+            gerelateerdewoonplaats,
+            begindatum,
+            einddatum)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        self.valuelist = (self.identificatie, self.inactief, \
+            self.correctie, self.officieel, self.inonderzoek, \
+            self.bron.documentnummer, self.bron.documentdatum, \
+            self.naam, self.type, self.status, self.gerelateerdeWoonplaats.identificatie,self.tijdvakgeldigheid.begindatum, self.tijdvakgeldigheid.einddatum)
 

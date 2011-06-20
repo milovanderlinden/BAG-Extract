@@ -19,6 +19,19 @@ class Orm:
         self.args = args
         self.database = postgresdb.Database(args)
 
+    def getCSV(self, csvreader):
+        self.gemeentewoonplaatsen = []
+        # TODO: Controleer of de eerste regel de verwachte headers bevat
+        cols = csvreader.next()
+        if (cols[0] == 'Woonplaats') and (cols[4] == 'Gemeente'):
+            for record in csvreader:
+                self.gemeentewoonplaatsen.append(Objecten.GemeenteWoonplaats(record))
+                
+        #self.database.verbind()
+        #for gemeentewoonplaats in self.gemeentewoonplaatsen:
+        #    gemeentewoonplaats.insert()
+        #    self.database.uitvoeren(gemeentewoonplaats.sql, gemeentewoonplaats.valuelist)
+
     def getDocument(self, node):
         self.ligplaatsen = []
         self.woonplaatsen = []

@@ -6,16 +6,12 @@ import logger
 import orm
 import os
 from xml.dom.minidom import parse
+import csv
 #from lxml import etree
 try:
   from cStringIO import StringIO
 except:
   from StringIO import StringIO
-
-def parscsv(csv):
-    # TODO: csv reader bouwen die het bestand inleest in het geheugen
-    #   Deze functie doet niet meer dan dat. procesCSV moet voor de verwerking van objecten zorgen
-    print "hello"
 
 class BAGFileReader:
     def __init__(self, file, args):
@@ -41,8 +37,8 @@ class BAGFileReader:
                 #xml = etree.parse (self.file)
                 self.processXML(zipfilename[0],xml)
             if ext == 'csv':
-                csv = parsecsv(self.file)
-                self.processCSV(zipfilename[0],csv)
+                fileobject = open(self.file, "rb")
+                self.processCSV(zipfilename[0], fileobject)
 
     def readDir(self):
         for each in os.listdir(self.file):
@@ -61,8 +57,9 @@ class BAGFileReader:
                             #xml = etree.parse (_file)
                             self.processXML(zipfilename[0],xml)
                         if ext == 'csv':
-                            csv = parsecsv(_file)
-                            self.processCSV(zipfilename[0],csv)
+                            fileobject = open(_file, "rb")
+                            self.processCSV(zipfilename[0],fileobject)
+
     def readzipfile(self):
         tzip = self.zip
         for naam in tzip.namelist():
@@ -77,11 +74,13 @@ class BAGFileReader:
                 self.readzipstring(StringIO(tzip.read(naam)))
             elif ext[1] == 'csv':
                 self.log.log(naam)
-                self.readzipstring(StringIO(tzip.read(naam)))
+                fileobject = StringIO(tzip.read(naam))
+                self.processCSV(naam, fileobject)
             else:
                 self.log.log(naam)
 
     def readzipstring(self,naam):
+        print naam
         tzip = zipfile.ZipFile(naam, "r")
 
         for nested in tzip.namelist():
@@ -93,9 +92,8 @@ class BAGFileReader:
                 self.processXML(nested, xml)
             elif ext[1] == 'csv':
                 self.log.log(nested)
-                csv = parsecsv(StringIO(tzip.read(nested)))
-                #xml = etree.parse(StringIO(tzip.read(nested)))
-                self.processCSV(nested, csv)
+                fileobject = StringIO(tzip.read(nested))
+                self.processCSV(nested, fileobject)
             elif ext[1] == 'zip':
                 self.log.log(nested)
                 self.readzipstring(StringIO(tzip.read(nested)))
@@ -111,9 +109,11 @@ class BAGFileReader:
         #self.log.log(document)
         xml.unlink()
 
-    def processCSV(self,naam, csv):
+    def processCSV(self,naam, fileobject):
         self.log.log(naam)
         # TODO: zorg voor de verwerking van het geparste csv bestand
         # Maak er gemeente_woonplaats objecten van overeenkomstig de nieuwe
         # tabel woonplaats_gemeente
+        myReader = csv.reader(fileobject, delimiter=';', quotechar='"')
+        self.orm.getCSV(myReader)
         
