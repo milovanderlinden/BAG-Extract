@@ -158,10 +158,9 @@ class GerelateerdeWoonplaats():
     BAG sub-klasse.
     """
     def __init__(self,xmlnode=None):
-        if xmlnode:
-            self.tag = "bag_LVC:gerelateerdeWoonplaats"
-            self.naam = "gerelateerdeWoonplaats"
-            self.type = ''
+        self.tag = "bag_LVC:gerelateerdeWoonplaats"
+        self.naam = "gerelateerdeWoonplaats"
+        self.type = ''
         if xmlnode:
             for node in xmlnode.childNodes:
                 if node.localName == 'identificatie':
@@ -301,6 +300,9 @@ class Nummeraanduiding(Base):
                 self.typeAdresseerbaarObject = getText(node.childNodes)
             if node.localName == 'gerelateerdeOpenbareRuimte':
                 self.gerelateerdeOpenbareRuimte = GerelateerdeOpenbareRuimte(node)
+            if node.localName == 'gerelateerdeWoonplaats':
+                self.gerelateerdeWoonplaats = GerelateerdeWoonplaats(node)
+
     def __repr__(self):
        return "<Nummeraanduiding('%s', '%s', '%s')>" % (self.identificatie, self.tijdvakgeldigheid, self.bron)
 
