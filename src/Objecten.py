@@ -45,6 +45,8 @@ __date__ = "$Jun 11, 2011 3:46:27 PM$"
 from osgeo import ogr #apt-get install python-gdal
 import datetime
 import time
+import xml.dom.minidom as dom
+
 #from sqlalchemy.ext.declarative import declarative_base
 #Base = declarative_base()
 # TODO: Testen met sqlalchemy en impact bepalen
@@ -81,8 +83,8 @@ def getDate(node):
         else:
             return None
 
-    else:
-        _text = getText(node.childNodes)
+    elif type(node) == dom.Node:
+        text = getText(node.childNodes)
         if len(_text) == 16:
             bagdatumtijd = _text[:-2]
             return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d%H%M%S")[0:6])

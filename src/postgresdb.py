@@ -66,7 +66,7 @@ class Database:
 
     def initialiseer(self, bestand):
         self.log.log('Probeer te verbinden...')
-        self.verbind('true')
+        self.verbind(True)
 
         self.log.log('database script uitvoeren...')
         try:
@@ -77,7 +77,7 @@ class Database:
         except psycopg2.DatabaseError, e:
             print "fout: procedures :%s" % str(e)
 
-    def verbind(self, initdb='false'):
+    def verbind(self, initdb=False):
         try:
             self.connection = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (self.database,
                                                                                                   self.user,
@@ -85,7 +85,7 @@ class Database:
                                                                                                  self.password));
             self.cursor = self.connection.cursor()
 
-            if initdb == 'true':
+            if initdb:
                 self.maak_schema()
 
             self.zet_schema()
@@ -101,10 +101,11 @@ class Database:
             self.uitvoeren('''CREATE SCHEMA %s;''' % self.schema)
 
     def zet_schema(self):
-        # Non-public  schema set search path
+        # Non-public schema set search path
         if self.schema != 'public':
-           # Always set search path to our schema
+            # Always set search path to our schema
             self.uitvoeren('SET search_path TO %s,public' % self.schema)
+            self.connection.commit()
 
     def uitvoeren(self, sql, parameters=None):
         try:
