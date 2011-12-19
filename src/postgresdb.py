@@ -98,7 +98,9 @@ class Database:
         # Public schema: no further action required
         if self.schema != 'public':
             # A specific schema is required create it and set the search path
+            self.uitvoeren('''DROP SCHEMA IF EXISTS %s CASCADE;''' % self.schema)
             self.uitvoeren('''CREATE SCHEMA %s;''' % self.schema)
+            self.connection.commit()
 
     def zet_schema(self):
         # Non-public schema set search path

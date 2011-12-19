@@ -363,6 +363,9 @@ class Standplaats(Base):
                 self.status = getText(node.childNodes)
             if node.localName == 'standplaatsGeometrie':
                 for geometrie in node.childNodes:
+                   # sla pure tekst nodes over
+                    if geometrie.nodeType == node.TEXT_NODE:
+                        continue
                     gml = geometrie.toxml()
                     self.geometrie = ogr.CreateGeometryFromGML(str(gml))
 
@@ -404,6 +407,10 @@ class Pand(Base):
                 self.bouwjaar = getText(node.childNodes)
             if node.localName == 'pandGeometrie':
                 for geometrie in node.childNodes:
+                    # sla pure tekst nodes over
+                    if geometrie.nodeType == node.TEXT_NODE:
+                        continue
+
                     gml = geometrie.toxml()
                     self.geometrie = ogr.CreateGeometryFromGML(str(gml))
 
@@ -476,6 +483,10 @@ class Ligplaats(Base):
                 self.status = getText(node.childNodes)
             if node.localName == 'ligplaatsGeometrie':
                 for geometrie in node.childNodes:
+                    # sla pure tekst nodes over
+                    if geometrie.nodeType == node.TEXT_NODE:
+                        continue
+
                     gml = geometrie.toxml()
                     self.geometrie = ogr.CreateGeometryFromGML(str(gml))
 
@@ -532,6 +543,10 @@ class Verblijfsobject():
                 # shape, wkt, wkb etc. kunt exporteren
                 #self.geometrie = gettext(node.childNodes)
                 for geometrie in node.childNodes:
+                    # sla pure tekst nodes over
+                    if geometrie.nodeType == node.TEXT_NODE:
+                        continue
+
                     gml = geometrie.toxml()
                     _geom = ogr.CreateGeometryFromGML(str(gml))
                     if _geom.GetGeometryName() <> 'POINT': #polygon!
@@ -601,6 +616,10 @@ class Woonplaats():
                 #self.geometrie = gettext(node.childNodes)
                 multigeom = ogr.Geometry( type= ogr.wkbMultiPolygon )
                 for geometrie in node.childNodes:
+                    # sla pure tekst nodes over
+                    if geometrie.nodeType == node.TEXT_NODE:
+                        continue
+
                     gml = geometrie.toxml()
                     simplegeom = ogr.CreateGeometryFromGML(str(gml))
                     if simplegeom.GetGeometryType() == 6: #multisurface!
