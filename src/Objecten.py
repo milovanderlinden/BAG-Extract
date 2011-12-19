@@ -14,7 +14,7 @@ __date__ = "$Jun 11, 2011 3:46:27 PM$"
 # Hierin is een BAG-object een verzameling van BAG-attributen met elk
 # hun eigen eigenschappen.
 #
-# Auteurs:       Matthijs van der Deijl, Milo van der Linden
+# Auteurs:       Matthijs van der Deijl, Milo van der Linden, Just van den Broecke
 #
 # Versie:       1.8
 #
