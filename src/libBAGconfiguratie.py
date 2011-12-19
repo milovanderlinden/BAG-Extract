@@ -26,6 +26,7 @@ class BAGconfiguratie:
         configdict.read('BAG.conf')
         try:
             self.database = configdict.defaults()['database']
+            self.schema = configdict.defaults()['schema']
             self.host     = configdict.defaults()['host']
             self.user     = configdict.defaults()['user']
             self.password = configdict.defaults()['password']

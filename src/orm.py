@@ -75,6 +75,7 @@ class Orm:
                                         self.panden.append(Objecten.Pand(bagnode))
 
             self.database.verbind()
+
             for ligplaats in self.ligplaatsen:
                 ligplaats.insert()
                 self.database.uitvoeren(ligplaats.sql, ligplaats.valuelist)

@@ -1,5 +1,5 @@
-__author__="Matthijs van der Deijl"
-__date__ ="$Dec 09, 2009 00:00:01 AM$"
+__author__ = "Matthijs van der Deijl"
+__date__ = "$Dec 09, 2009 00:00:01 AM$"
 
 """
  Naam:         libDatabase.py
@@ -37,6 +37,16 @@ class Database:
             self.host = args.host
         else:
             self.host = configuratie.host
+
+        if args.schema:
+            self.schema = args.schema
+        else:
+            self.schema = configuratie.schema
+
+        # default to public schema
+        if not self.schema:
+            self.schema = 'public'
+
         if args.username:
             self.user = args.username
         else:
@@ -56,27 +66,45 @@ class Database:
 
     def initialiseer(self, bestand):
         self.log.log('Probeer te verbinden...')
-        self.verbind()
+        self.verbind('true')
+
         self.log.log('database script uitvoeren...')
         try:
-            script  = open(bestand,'r').read()
+            script = open(bestand, 'r').read()
             self.cursor.execute(script)
             self.connection.commit()
             self.log.log('script uitgevoerd')
         except psycopg2.DatabaseError, e:
             print "fout: procedures :%s" % str(e)
-            
-    def verbind(self):
+
+    def verbind(self, initdb='false'):
         try:
-            self.connection = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" %(self.database,
-                                                                                                 self.user,
-                                                                                                 self.host,
+            self.connection = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (self.database,
+                                                                                                  self.user,
+                                                                                                  self.host,
                                                                                                  self.password));
             self.cursor = self.connection.cursor()
-            self.log.log("verbonden met database %s" %(self.database))
+
+            if initdb == 'true':
+                self.maak_schema()
+
+            self.zet_schema()
+            self.log.log("verbonden met database %s" % (self.database))
         except Exception, e:
-            print("fout %s: kan geen verbinding maken met database %s" %(str(e),self.database))
+            print("fout %s: kan geen verbinding maken met database %s" % (str(e), self.database))
             sys.exit()
+
+    def maak_schema(self):
+        # Public schema: no further action required
+        if self.schema != 'public':
+            # A specific schema is required create it and set the search path
+            self.uitvoeren('''CREATE SCHEMA %s;''' % self.schema)
+
+    def zet_schema(self):
+        # Non-public  schema set search path
+        if self.schema != 'public':
+           # Always set search path to our schema
+            self.uitvoeren('SET search_path TO %s,public' % self.schema)
 
     def uitvoeren(self, sql, parameters=None):
         try:
@@ -84,6 +112,6 @@ class Database:
                 self.cursor.execute(sql, parameters)
             else:
                 self.cursor.execute(sql)
-        except (psycopg2.IntegrityError,psycopg2.ProgrammingError), e:
-            print "fout %s voor query: %s" %(str(e), str(self.cursor.mogrify(sql,parameters)))
+        except (psycopg2.IntegrityError, psycopg2.ProgrammingError), e:
+            print "fout %s voor query: %s" % (str(e), str(self.cursor.mogrify(sql, parameters)))
             return self.cursor.rowcount

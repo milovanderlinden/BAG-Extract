@@ -53,6 +53,7 @@ def main():
         epilog="Configureer de database in BAG.conf of geef de database parameters op")
     parser.add_argument('-c', '--dbinit', action='store_true', help='wist oude tabellen en maakt nieuw tabellen')
     parser.add_argument('-d', '--database', metavar='BAG', help='database naam')
+    parser.add_argument('-s', '--schema', metavar='BAG', help='database schema')
     parser.add_argument('-e', '--extract', metavar='bestand', help='neemt een pad naar een bestand en importeert deze in de database')
     parser.add_argument('-H', '--host', metavar='localhost', help='database host')
     parser.add_argument('-U', '--username', metavar='postgres', help='database gebruiker')
