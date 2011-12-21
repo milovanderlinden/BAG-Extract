@@ -4,6 +4,10 @@ __date__ = "$Dec 21, 2011 00:00:01 AM$"
 """
  Naam:         oracledb.py
  Omschrijving: functies voor databasegebruik binnen BAG Extract+
+               Voor oracle gelden wat andere randvoorwaarden:
+               - elke user komt standaard binnen in zijn eigen schema
+               - Je verbindt niet met een database, maar met een sid,
+                 dat moet getest worden.
 
  Versie:       0.1
                - Voor oracle 11g
