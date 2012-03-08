@@ -1,120 +1,212 @@
-__author__ = "Matthijs van der Deijl"
-__date__ = "$Dec 09, 2009 00:00:01 AM$"
-
 """
- Naam:         libDatabase.py
- Omschrijving: Generieke functies voor databasegebruik binnen BAG Extract+
- Auteur:       Matthijs van der Deijl
-
- Versie:       1.4
-               - Deze database klasse is vanaf heden specifiek voor postgres/postgis
- Datum:        15 juni 2011
-
- Versie:       1.3
-               - functie controleerTabellen toegevoegd
-               - selectie van logregels gesorteerd op datum
- Datum:        9 december 2009
-
- Versie:       1.2
- Datum:        24 november 2009
-
- Ministerie van Volkshuisvesting, Ruimtelijke Ordening en Milieubeheer
+ Naam: postgresdb.py
+ Omschrijving: Database driver voor postgres
+ Auteur(s): Matthijs van der Deijl, Milo van der Linden, Just van den Broecke
 """
-import psycopg2
-import logger
-from libBAGconfiguratie import *
+
+import sys
+import os
+import logging
+import datetime
+import time
+import xml.dom.minidom as dom
+
+try:
+   import psycopg2
+except:
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    logging.critical("Python psycopg2 is niet geinstalleerd")
+    sys.exit()
 
 class Database:
-    def __init__(self, args):
-        # Lees de configuratie uit BAG.conf
-        self.args = args
-        self.log = logger.LogHandler(args)
-        if args.database:
-            self.database = args.database
-        else:
-            self.database = configuratie.database
-        if args.host:
-            self.host = args.host
-        else:
-            self.host = configuratie.host
 
-        if args.schema:
-            self.schema = args.schema
-        else:
-            self.schema = configuratie.schema
-
-        # default to public schema
-        if not self.schema:
-            self.schema = 'public'
-
-        if args.username:
-            self.user = args.username
-        else:
-            self.user = configuratie.user
-        if args.port:
-            self.port = args.port
-        else:
-            self.port = 5432
-        if args.no_password:
-            # Gebruik geen wachtwoord voor de database verbinding
-            self.password = None
-        else:
-            if args.password:
-                self.password = args.password
-            else:
-                self.password = configuratie.password
+    def __init__(self, configuratie):
+        self.config = configuratie
 
     def initialiseer(self, bestand):
-        self.log.log('Probeer te verbinden...')
-        self.verbind(True)
+        self.config.logger.debug("postgresdb.initialiseer()")
+        self.verbind()
 
-        self.log.log('database script uitvoeren...')
         try:
+            self.config.logger.info("Database script wordt gelezen")
             script = open(bestand, 'r').read()
             self.cursor.execute(script)
             self.connection.commit()
-            self.log.log('script uitgevoerd')
-        except psycopg2.DatabaseError, e:
-            print "fout: procedures :%s" % str(e)
-
-    def verbind(self, initdb=False):
-        try:
-            self.connection = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (self.database,
-                                                                                                  self.user,
-                                                                                                  self.host,
-                                                                                                 self.password));
-            self.cursor = self.connection.cursor()
-
-            if initdb:
-                self.maak_schema()
-
-            self.zet_schema()
-            self.log.log("verbonden met database %s" % (self.database))
-        except Exception, e:
-            print("fout %s: kan geen verbinding maken met database %s" % (str(e), self.database))
+            self.config.logger.info("Database script uitgevoerd")
+        except psycopg2.DatabaseError:
+            e = sys.exc_info()[1]
+            self.config.logger.critical("'%s' tijdens het inlezen van '%s'" % (str(e), str(bestand)))
             sys.exit()
 
-    def maak_schema(self):
-        # Public schema: no further action required
-        if self.schema != 'public':
-            # A specific schema is required create it and set the search path
-            self.uitvoeren('''DROP SCHEMA IF EXISTS %s CASCADE;''' % self.schema)
-            self.uitvoeren('''CREATE SCHEMA %s;''' % self.schema)
-            self.connection.commit()
+    def getText(self, nodelist):
+        """
+        Voeg de inhoud van XML textnodes samen tot een string
+        """
+        rc = ""
+        for node in nodelist:
+            if node.nodeType == node.TEXT_NODE:
+                rc = rc + node.data
+        return rc
+
+    def getDate(self, node):
+        """
+        Maak een datum object van een XML datum/tijd
+        BAG Datum/tijd is in het formaat JJJJMMDDUUMMSSmm
+        Deze functie genereert een datum van de BAG:DatumTijd
+        """
+        if type(node) == str:
+            # TODO Momenteel alleen voor de gemeente_woonplaats csv
+            _text = node
+            if len(_text) > 0:
+                if len(_text) == 10:
+                    return datetime.datetime(*time.strptime(_text, "%d-%m-%Y")[0:6])
+                elif len(_text) == 8:
+                    return datetime.datetime(*time.strptime(_text, "%Y%m%d")[0:6])
+            else:
+                return None
+
+        elif type(node) == dom.Node:
+            text = getText(node.childNodes)
+            if len(_text) == 16:
+                bagdatumtijd = _text[:-2]
+                return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d%H%M%S")[0:6])
+            elif len(_text) == 8:
+                bagdatumtijd = _text
+                return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d")[0:6])
+
+    def getTimestamp(self, node):
+        """
+        Maak een datum/tijd object van een XML datum/tijd
+        BAG Datum/tijd is in het formaat JJJJMMDDUUMMSSmm
+        Deze functie genereert een timestamp van de BAG:DatumTijd
+        """
+        _text = getText(node.childNodes)
+        if len(_text) == 16:
+            bagdatumtijd = _text[:-2]
+            return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d%H%M%S")[0:6])
+        elif len(_text) == 8:
+            bagdatumtijd = _text
+            return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d")[0:6])
+
+    def maak_database(self):
+        self.config.logger.debug("postgresdb.maak_database()")
+        
+        from objecten.ligplaats import Ligplaats
+        from objecten.nummeraanduiding import Nummeraanduiding
+        from objecten.openbareruimte import Openbareruimte
+        from objecten.pand import Pand
+        from objecten.standplaats import Standplaats
+        from objecten.verblijfsobject import Verblijfsobject
+        from objecten.woonplaats import Woonplaats
+        from objecten.verblijfsobjectgebruiksdoel import Verblijfsobjectgebruiksdoel
+        from objecten.verblijfsobjectpand import Verblijfsobjectpand
+        from objecten.adresseerbaarobjectnevenadres import Adresseerbaarobjectnevenadres
+        from objecten.gemeentewoonplaats import Gemeentewoonplaats
+        from objecten.gemeenteprovincie import Gemeenteprovincie
+        
+        self.verbind()
+ 
+        self.cursor.execute(Ligplaats.drop)
+        self.cursor.execute(Nummeraanduiding.drop)
+        self.cursor.execute(Openbareruimte.drop)
+        self.cursor.execute(Pand.drop)
+        self.cursor.execute(Standplaats.drop)
+        self.cursor.execute(Verblijfsobject.drop)
+        self.cursor.execute(Woonplaats.drop)
+        self.cursor.execute(Verblijfsobjectgebruiksdoel.drop)
+        self.cursor.execute(Verblijfsobjectpand.drop)
+        self.cursor.execute(Adresseerbaarobjectnevenadres.drop)
+        self.cursor.execute(Gemeentewoonplaats.drop)
+        self.cursor.execute(Gemeenteprovincie.drop)
+        
+        self.cursor.execute(Ligplaats.create)
+        self.cursor.execute(Nummeraanduiding.create)
+        self.cursor.execute(Openbareruimte.create)
+        self.cursor.execute(Pand.create)
+        self.cursor.execute(Standplaats.create)
+        self.cursor.execute(Verblijfsobject.create)
+        self.cursor.execute(Woonplaats.create)
+        self.cursor.execute(Verblijfsobjectgebruiksdoel.create)
+        self.cursor.execute(Verblijfsobjectpand.create)
+        self.cursor.execute(Adresseerbaarobjectnevenadres.create)
+        self.cursor.execute(Gemeentewoonplaats.create)
+        self.cursor.execute(Gemeenteprovincie.create)
+        self.cursor.execute("select probe_geometry_columns();")
+        self.connection.commit()
+        
+
+    def verbind(self):
+        self.config.logger.debug("postgresdb.verbind()")
+        try:
+
+            self.config.logger.info('Verbinding maken met ' + self.config.database)
+            self.connection = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (self.config.database,
+                                                                                                  self.config.user,
+                                                                                                  self.config.host,
+                                                                                                 self.config.password))
+            self.cursor = self.connection.cursor()
+            self.config.logger.info("Verbonden")
+            self.zet_schema()
+        except Exception:
+
+            e = sys.exc_info()[1]
+            self.config.logger.critical("Verbinden mislukt: %s" % (str(e)))
+            # TODO: Bepalen of hier connecties en cursors moeten worden gesloten
+            sys.exit()
 
     def zet_schema(self):
-        # Non-public schema set search path
-        if self.schema != 'public':
-            # Always set search path to our schema
-            self.uitvoeren('SET search_path TO %s,public' % self.schema)
-            self.connection.commit()
+        self.config.logger.debug("postgresdb.zet_schema()")
+        if self.config.schema != 'public':
+            try:
+                self.cursor.execute('SET search_path TO %s,public' % self.config.schema)
+
+            except Exception:
+
+                self.connection.rollback()
+                self.config.logger.warning('Schema %s bestaat nog niet en wordt gemaakt' % self.config.schema)
+
+                try:
+
+                    self.cursor.execute('CREATE SCHEMA %s;' % self.config.schema)
+                    self.cursor.execute('SET search_path TO %s,public' % self.config.schema)
+                    self.config.logger.info("Schema %s is aangemaakt" % self.config.schema)
+
+                except Exception:
+
+                    self.connection.rollback()
+                    e = sys.exc_info()[1]
+                    self.config.logger.error("Schema %s kon niet worden gemaakt: %s" % (self.config.schema, str(e)))
 
     def uitvoeren(self, sql, parameters=None):
         try:
             if parameters:
+                #self.config.logger.debug("postgresdb.uitvoeren(%s, %s)" % (sql, parameters))
                 self.cursor.execute(sql, parameters)
             else:
+                #self.config.logger.debug("postgresdb.uitvoeren(%s)" % sql)
                 self.cursor.execute(sql)
-        except (psycopg2.IntegrityError, psycopg2.ProgrammingError), e:
-            print "fout %s voor query: %s" % (str(e), str(self.cursor.mogrify(sql, parameters)))
-            return self.cursor.rowcount
+
+            self.connection.commit()
+
+        except Exception:
+            self.connection.rollback()
+            e = sys.exc_info()[1]
+            self.config.logger.error("%s" % str(e))
+
+
+    def file_uitvoeren(self, sqlfile):
+        self.config.logger.debug("postgresdb.file_uitvoeren(%s)" % sqlfile)
+        try:
+            self.config.logger.info("Script %s wordt uitgevoerd" % sqlfile)
+            self.verbind()
+            f = open(sqlfile, 'r')
+            sql = f.read()
+            self.uitvoeren(sql)
+            self.connection.commit()
+            f.close()
+
+        except (Exception):
+
+            self.connection.rollback()
+            e = sys.exc_info()[1]
+            self.config.logger.critical("ik kan dit script niet uitvoeren vanwege deze fout: %s" % (str(e)))

@@ -63,6 +63,7 @@ def main():
     args = parser.parse_args()
 
     # Init globale configuratie
+    from bagconfig import BAGConfig
     myconfig = BAGConfig(args)
     
     if args.verbose:
@@ -73,14 +74,13 @@ def main():
     if args.dbinit:
         mydb = myconfig.get_database()
         mydb.maak_database()
-        sys.exit()
         
     elif args.extract:
-        from bagfilereader import BAGFileReader
-        myreader = BAGFileReader(myconfig)
+        from bagfilereader import BAGFilereader
+        myreader = BAGFilereader(myconfig)
         myreader.process()
         
-   elif args.query:
+    elif args.query:
         #TODO geen args gebruiken maar BAGConfig.
         # Op deze manier gaan beide configuraties uit de pas lopen met kans op fouten
         # Voer willekeurig SQL script uit uit
@@ -90,7 +90,7 @@ def main():
     else:
         myconfig.logger.critical("Kan de opdracht niet verwerken. Type -h of --help voor een overzicht van parameters")
 
-    myconfig.logger.info("BAG.py beeindigd")
+    myconfig.logger.info("bagextract.py beeindigd")
     sys.exit()
     
 if __name__ == "__main__":

@@ -3,3 +3,7 @@
 .pydevproject
 BAG-milo.conf
 issues.txt
+*~
+*.zip
+*.conf
+*.mp4
