@@ -6,20 +6,8 @@ class Gemeentewoonplaats():
     def __init__(self,record, configuratie):
         self.config = configuratie
         mydb = self.config.get_database()
-        # TODO: De csv is niet volledig gevuld, controleer of een record wel het minimaal aantal objecten bevat.
-        # Woonplaats;Woonplaats code;Ingangsdatum WPL;Einddatum WPL;Gemeente;Gemeente code;
-        # Ingangsdatum nieuwe gemeente;Aansluitdatum;Bijzonderheden;Nieuwe code Gemeente;
-        # Gemeente beeindigd per;Behandeld;        Laatste WPL code:;3513
-
-        # Dirty! Dit kan vast makkelijker, mijn python tekortkoming blijkt hier ;-)
-        emptylist = [None,None,None,None,None,None,None,None,None,None,None,None]
-        record.extend(emptylist)
-        # Stel de lengte van het record object in op 12
+        # TODO: de woonplaats_gemeente tabel ophalen met curl of wget
         if record[0]:
-            #print record
-            self.tag = "gem_LVC:GemeenteWoonplaats"
-            self.naam = "gemeente_woonplaats"
-            self.type = 'G_W'
             self.woonplaatsnaam = record[0]
             self.woonplaatscode = record[1]
             self.ingangsdatum_woonplaats = mydb.getDate(record[2])
@@ -30,7 +18,7 @@ class Gemeentewoonplaats():
             self.einddatum_gemeente = mydb.getDate(record[7])
 
     def __repr__(self):
-       return "<GemeenteWoonplaats('%s','%s', '%s')>" % (self.naam, self.gemeentecode, self.woonplaatscode)
+       return "<GemeenteWoonplaats('%s','%s', '%s')>" % (self.woonplaatsnaam, self.gemeentecode, self.woonplaatscode)
 
     def insert(self):
         _sql = "INSERT INTO " + self.config.schema + ".gemeente_woonplaats ("
@@ -48,9 +36,11 @@ class Gemeentewoonplaats():
             self.einddatum_woonplaats,self.gemeentenaam, self.gemeentecode, self.ingangsdatum_gemeente, \
             self.einddatum_gemeente)
             
-    drop = "DROP TABLE IF EXISTS gemeente_woonplaats;"
+    def drop(self):
+        return "DROP TABLE IF EXISTS " + self.config.schema + ".gemeente_woonplaats;"
     
-    create = """CREATE TABLE gemeente_woonplaats (
+    def create(self):
+        return """CREATE TABLE """ + self.config.schema + """.gemeente_woonplaats (
                   gid serial,
                   woonplaatsnaam character varying(80),
                   woonplaatscode numeric(4),

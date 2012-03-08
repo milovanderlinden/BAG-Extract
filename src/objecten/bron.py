@@ -1,6 +1,6 @@
 class Bron():
     """
-    BAG sub-klasse.
+    BAG sub-klasse Bron. Deze wordt platgeslagen vanwege het ontbreken van sleutels.
     """
     def __init__(self, xmlnode, configuratie):
         self.config = configuratie

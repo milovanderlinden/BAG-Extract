@@ -61,7 +61,8 @@ class Ligplaats():
        return "<Ligplaats('%s','%s', '%s', '%s')>" % (self.identificatie, self.gerelateerdeAdressen, self.tijdvakgeldigheid, self.bron)
    
     def insert(self):
-        self.sql = """INSERT INTO ligplaats (identificatie, aanduidingrecordinactief,
+        _sql = "INSERT INTO " + self.config.schema + ".ligplaats ("
+        self.sql = _sql + """identificatie, aanduidingrecordinactief,
             aanduidingrecordcorrectie, officieel, inonderzoek, documentnummer, documentdatum, hoofdadres,
             ligplaatsstatus, begindatumtijdvakgeldigheid, einddatumtijdvakgeldigheid, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromGML(%s))"""
         self.valuelist = (self.identificatie, self.inactief, \
@@ -69,9 +70,11 @@ class Ligplaats():
             self.gerelateerdeAdressen.hoofdadres, self.status, self.tijdvakgeldigheid.begindatum, \
             self.tijdvakgeldigheid.einddatum, self.geometrie)
 
-    drop = "DROP TABLE IF EXISTS ligplaats CASCADE;"
+    def drop(self):
+        return "DROP TABLE IF EXISTS " + self.config.schema + ".ligplaats CASCADE;"
         
-    create = """CREATE TABLE ligplaats (
+    def create(self):
+        return """CREATE TABLE """ + self.config.schema + """.ligplaats (
                     gid serial,
                     identificatie numeric(16,0),
                     aanduidingrecordinactief boolean,
