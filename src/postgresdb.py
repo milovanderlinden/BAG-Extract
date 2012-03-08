@@ -38,6 +38,19 @@ class Database:
             self.config.logger.critical("'%s' tijdens het inlezen van '%s'" % (str(e), str(bestand)))
             sys.exit()
 
+    def getBoolean(self, nodelist):
+        rc = ""
+        for node in nodelist:
+            if node.nodeType == node.TEXT_NODE:
+                rc = rc + node.data
+
+        if rc == 'N':
+            return 'FALSE'
+        elif rc == 'J':
+            return 'TRUE'
+        else:
+            return None
+
     def getText(self, nodelist):
         """
         Voeg de inhoud van XML textnodes samen tot een string
@@ -54,6 +67,7 @@ class Database:
         BAG Datum/tijd is in het formaat JJJJMMDDUUMMSSmm
         Deze functie genereert een datum van de BAG:DatumTijd
         """
+        self.config.logger.debug(node)
         if type(node) == str:
             # TODO Momenteel alleen voor de gemeente_woonplaats csv
             _text = node
@@ -65,14 +79,28 @@ class Database:
             else:
                 return None
 
-        elif type(node) == dom.Node:
-            text = getText(node.childNodes)
+        elif node is None:
+            return None
+
+        else:
+            # TODO check inbouwen op nodetype en of aan alle voorwaarden wordt voldaan
+            _text = self.getText(node.childNodes)
+            self.config.logger.debug(_text)
             if len(_text) == 16:
                 bagdatumtijd = _text[:-2]
-                return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d%H%M%S")[0:6])
+                _dt = datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d%H%M%S")[0:6])
+                self.config.logger.debug(_dt)
+                return _dt
+                
             elif len(_text) == 8:
                 bagdatumtijd = _text
-                return datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d")[0:6])
+                _dt = datetime.datetime(*time.strptime(bagdatumtijd, "%Y%m%d")[0:6])
+                self.config.logger.debug(_dt)
+                return _dt
+
+            else:
+                return None
+                
 
     def getTimestamp(self, node):
         """

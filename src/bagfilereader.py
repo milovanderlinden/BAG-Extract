@@ -156,13 +156,108 @@ class BAGFilereader:
 
     def processXML(self, naam, xml):
         self.config.logger.debug("bagfilereader.processXML(naam, xml)")
-        self.config.logger.info("processXML: " + naam)
+        #self.config.logger.info("processXML: " + naam)
         xmldoc = xml.documentElement
-        #xmldoc = xml.getroot()
-        #de orm bepaalt of het een extract of een mutatie is
-        self.processor.processDOM(xmldoc)
-        #Log.log.info(document)
+        self.processDOM(xmldoc)
         xml.unlink()
+
+    def processDOM(self, node):
+        self.config.logger.debug("bagfilereader.processDOM(naam, xml)")
+        self.ligplaatsen = []
+        self.verblijfsobjecten = []
+        self.openbareRuimten = []
+        self.nummeraanduidingen = []
+        self.standplaatsen = []
+        self.panden = []
+        
+        mode = "Onbekend"
+
+        if node.localName == 'BAG-Extract-Deelbestand-LVC':
+            mode = 'Nieuw'
+            #firstchild moet zijn 'antwoord'
+            for childNode in node.childNodes:
+                if childNode.localName == 'antwoord':
+                    # Antwoord bevat twee childs: vraag en producten
+                    antwoord = childNode
+                    for child in antwoord.childNodes:
+                        if child.localName == "vraag":
+                            # TODO: Is het een idee om vraag als object ook af te
+                            # handelen en op te slaan
+                            vraag = child
+                        elif child.localName == "producten":
+                            producten = child
+                            #Log.log.startTimer("objCreate")
+                            for productnode in producten.childNodes:
+                                if productnode.localName == 'LVC-product':
+                                    for node in productnode.childNodes:
+                                        if node.localName == 'Ligplaats':
+                                            from objecten.ligplaats import Ligplaats
+                                            _obj = Ligplaats(node, self.config)
+                                            self.ligplaatsen.append(_obj)
+                                            #self.config.logger.debug(_obj)
+                                        elif node.localName == 'Woonplaats':
+                                            _obj = Woonplaats()
+                                        elif node.localName == 'Verblijfsobject':
+                                            _obj = Verblijfsobject()
+                                        elif node.localName == 'OpenbareRuimte':
+                                            _obj = OpenbareRuimte()
+                                        elif node.localName == 'Nummeraanduiding':
+                                            _obj = Nummeraanduiding()
+                                        elif node.localName == 'Standplaats':
+                                            _obj = Standplaats()
+                                        elif node.localName == 'Pand':
+                                           _obj = Pand()
+                                           
+                            mydb = self.config.get_database()
+                            mydb.verbind()
+                            
+                            for ligplaats in self.ligplaatsen:
+                                ligplaats.insert()
+
+                                mydb.uitvoeren(ligplaats.sql, ligplaats.valuelist)            
+
+
+        elif node.localName == 'BAG-Mutaties-Deelbestand-LVC':
+            mode = 'Mutatie'
+            #firstchild moet zijn 'antwoord'
+            for childNode in node.childNodes:
+                if childNode.localName == 'antwoord':
+                    # Antwoord bevat twee childs: vraag en producten
+                    antwoord = childNode
+                    for child in antwoord.childNodes:
+                        if child.localName == "producten":
+                            producten = child
+                            #Log.log.startTimer("objCreate (mutaties)")
+                            for productnode in producten.childNodes:
+                                if productnode.localName == 'Mutatie-product' and productnode.childNodes:
+                                    origineelObj = None
+                                    nieuwObj = None
+                                    for mutatienode in productnode.childNodes:
+                                        if mutatienode.localName == 'Nieuw':
+                                            #Log.log.info("Nieuw Object")
+                                            self.bagObjecten.extend(
+                                                BAGObjectFabriek.bof.BAGObjectArrayBijXML(mutatienode.childNodes))
+                                        elif mutatienode.localName == 'Origineel':
+                                            objs = BAGObjectFabriek.bof.BAGObjectArrayBijXML(mutatienode.childNodes)
+                                            if len(objs) > 0:
+                                                origineelObj = objs[0]
+                                        elif mutatienode.localName == 'Wijziging':
+                                            objs = BAGObjectFabriek.bof.BAGObjectArrayBijXML(mutatienode.childNodes)
+
+                                            if len(objs) > 0:
+                                                nieuwObj = objs[0]
+                                                if nieuwObj and origineelObj:
+                                                    nieuwObj.origineelObj = origineelObj
+                                                    self.bagObjecten.append(nieuwObj)
+                                                    #Log.log.info("Wijziging Object")
+                                                    origineelObj = None
+                                                    nieuwObj = None
+
+                            #Log.log.endTimer("objCreate (mutaties) - objs=" + str(len(self.bagObjecten)))
+        else:
+            BAGConfig.logger.warn("kan node niet verwerken: " + node.localName)
+            return
+
 
     def processCSV(self,naam, fileobject):
         self.config.logger.debug("bagfilereader.processCSV(naam, fileobject)")
@@ -199,7 +294,7 @@ class BAGFilereader:
         self.config.logger.info("%s objecten gevonden in bestand" % str(len(objecten)))
         mydb = self.config.get_database()
         mydb.verbind()
-        mydb.connection.set_client_encoding('UTF8')
+        mydb.connection.set_client_encoding('LATIN1')
         
         for object in objecten:
             object.insert()
