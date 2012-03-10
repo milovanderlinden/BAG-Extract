@@ -54,7 +54,6 @@ class Ligplaats():
                     # sla pure tekst nodes over
                     if geometrie.nodeType == node.TEXT_NODE:
                         continue
-                    #self.config.logger.debug(gml)
                     self.geometrie = geometrie.toxml()
 
     def __repr__(self):

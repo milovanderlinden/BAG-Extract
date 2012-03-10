@@ -204,7 +204,9 @@ class BAGFilereader:
                                         elif node.localName == 'Nummeraanduiding':
                                             _obj = Nummeraanduiding()
                                         elif node.localName == 'Standplaats':
-                                            _obj = Standplaats()
+                                            from objecten.standplaats import Standplaats
+                                            _obj = Standplaats(node,self.config)
+                                            self.standplaatsen.append(_obj)
                                         elif node.localName == 'Pand':
                                            _obj = Pand()
                                            
@@ -213,8 +215,11 @@ class BAGFilereader:
                             
                             for ligplaats in self.ligplaatsen:
                                 ligplaats.insert()
-
                                 mydb.uitvoeren(ligplaats.sql, ligplaats.valuelist)            
+
+                            for standplaats in self.standplaatsen:
+                                standplaats.insert()
+                                mydb.uitvoeren(standplaats.sql, standplaats.valuelist)
 
 
         elif node.localName == 'BAG-Mutaties-Deelbestand-LVC':
