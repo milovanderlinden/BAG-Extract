@@ -134,7 +134,7 @@ class Database:
         
         self.verbind()
  
-        self.cursor.execute(Ligplaats.drop(self))
+        self.cursor.execute(Ligplaats.drop(self.config.schema))
         self.cursor.execute(Nummeraanduiding.drop)
         self.cursor.execute(Openbareruimte.drop)
         self.cursor.execute(Pand.drop)
@@ -144,10 +144,10 @@ class Database:
         self.cursor.execute(Verblijfsobjectgebruiksdoel.drop)
         self.cursor.execute(Verblijfsobjectpand.drop)
         self.cursor.execute(Adresseerbaarobjectnevenadres.drop)
-        self.cursor.execute(Gemeentewoonplaats.drop(self))
+        self.cursor.execute(Gemeentewoonplaats.drop(self.config.schema))
         self.cursor.execute(Gemeenteprovincie.drop)
         
-        self.cursor.execute(Ligplaats.create(self))
+        self.cursor.execute(Ligplaats.create(self.config.schema))
         self.cursor.execute(Nummeraanduiding.create)
         self.cursor.execute(Openbareruimte.create)
         self.cursor.execute(Pand.create)
@@ -157,7 +157,7 @@ class Database:
         self.cursor.execute(Verblijfsobjectgebruiksdoel.create)
         self.cursor.execute(Verblijfsobjectpand.create)
         self.cursor.execute(Adresseerbaarobjectnevenadres.create)
-        self.cursor.execute(Gemeentewoonplaats.create(self))
+        self.cursor.execute(Gemeentewoonplaats.create(self.config.schema))
         self.cursor.execute(Gemeenteprovincie.create)
         self.cursor.execute("select probe_geometry_columns();")
         self.connection.commit()

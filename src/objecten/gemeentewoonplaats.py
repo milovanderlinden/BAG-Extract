@@ -35,12 +35,14 @@ class Gemeentewoonplaats():
         self.valuelist = (self.woonplaatsnaam, self.woonplaatscode, self.ingangsdatum_woonplaats, \
             self.einddatum_woonplaats,self.gemeentenaam, self.gemeentecode, self.ingangsdatum_gemeente, \
             self.einddatum_gemeente)
-            
-    def drop(self):
-        return "DROP TABLE IF EXISTS " + self.config.schema + ".gemeente_woonplaats;"
-    
-    def create(self):
-        return """CREATE TABLE """ + self.config.schema + """.gemeente_woonplaats (
+
+    @staticmethod      
+    def drop(schema):
+        return "DROP TABLE IF EXISTS " + schema + ".gemeente_woonplaats;"
+
+    @staticmethod    
+    def create(schema):
+        return """CREATE TABLE """ + schema + """.gemeente_woonplaats (
                   gid serial,
                   woonplaatsnaam character varying(80),
                   woonplaatscode numeric(4),

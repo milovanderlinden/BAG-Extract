@@ -70,11 +70,13 @@ class Ligplaats():
             self.gerelateerdeAdressen.hoofdadres, self.status, self.tijdvakgeldigheid.begindatum, \
             self.tijdvakgeldigheid.einddatum, self.geometrie)
 
-    def drop(self):
-        return "DROP TABLE IF EXISTS " + self.config.schema + ".ligplaats CASCADE;"
-        
-    def create(self):
-        return """CREATE TABLE """ + self.config.schema + """.ligplaats (
+    @staticmethod
+    def drop(schema):
+        return "DROP TABLE IF EXISTS " + schema + ".ligplaats CASCADE;"
+
+    @staticmethod
+    def create(schema):
+        return """CREATE TABLE """ + schema + """.ligplaats (
                     gid serial,
                     identificatie numeric(16,0),
                     aanduidingrecordinactief boolean,
