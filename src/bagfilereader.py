@@ -167,6 +167,8 @@ class BAGFilereader:
         from objecten.ligplaats import Ligplaats
         from objecten.standplaats import Standplaats
         from objecten.pand import Pand
+        from objecten.nummeraanduiding import Nummeraanduiding
+
         self.ligplaatsen = []
         self.verblijfsobjecten = []
         self.openbareRuimten = []
@@ -205,7 +207,8 @@ class BAGFilereader:
                                         elif node.localName == 'OpenbareRuimte':
                                             _obj = OpenbareRuimte()
                                         elif node.localName == 'Nummeraanduiding':
-                                            _obj = Nummeraanduiding()
+                                            _obj = Nummeraanduiding(node, self.config)
+                                            self.nummeraanduidingen.append(_obj)
                                         elif node.localName == 'Standplaats':
                                             _obj = Standplaats(node,self.config)
                                             self.standplaatsen.append(_obj)
@@ -216,9 +219,17 @@ class BAGFilereader:
                             mydb = self.config.get_database()
                             mydb.verbind()
                             
+                            # TODO Momenteel worden de database acties geloopt en wordt elk individueel record gecommit.
+                            # Ik denk erover om de commits te centraliseren en commitloops van bepaalde volumes te maken, b.v. een commitloop per duizend
+                            # Dat maakt rollbacks ook eenvoudiger
+
                             for ligplaats in self.ligplaatsen:
                                 ligplaats.insert()
                                 mydb.uitvoeren(ligplaats.sql, ligplaats.valuelist)            
+
+                            for nummeraanduiding in self.nummeraanduidingen:
+                                nummeraanduiding.insert()
+                                mydb.uitvoeren(nummeraanduiding.sql, nummeraanduiding.valuelist)
 
                             for standplaats in self.standplaatsen:
                                 standplaats.insert()
