@@ -40,7 +40,7 @@ class Standplaats():
        return "<Standplaats('%s','%s', '%s', '%s')>" % (self.identificatie, self.gerelateerdeAdressen, self.tijdvakgeldigheid, self.bron)
 
     def insert(self):
-        self.sql = """INSERT INTO standplaats (identificatie, aanduidingrecordinactief,
+        self.sql = """INSERT INTO """ + self.config.schema + """.standplaats (identificatie, aanduidingrecordinactief,
             aanduidingrecordcorrectie, officieel, inonderzoek, documentnummer, documentdatum, hoofdadres,
             standplaatsstatus, begindatumtijdvakgeldigheid, einddatumtijdvakgeldigheid, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromGml(%s))"""
         self.valuelist = (self.identificatie, self.inactief, \

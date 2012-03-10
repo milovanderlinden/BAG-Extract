@@ -163,6 +163,10 @@ class BAGFilereader:
 
     def processDOM(self, node):
         self.config.logger.debug("bagfilereader.processDOM(naam, xml)")
+        
+        from objecten.ligplaats import Ligplaats
+        from objecten.standplaats import Standplaats
+        from objecten.pand import Pand
         self.ligplaatsen = []
         self.verblijfsobjecten = []
         self.openbareRuimten = []
@@ -191,7 +195,6 @@ class BAGFilereader:
                                 if productnode.localName == 'LVC-product':
                                     for node in productnode.childNodes:
                                         if node.localName == 'Ligplaats':
-                                            from objecten.ligplaats import Ligplaats
                                             _obj = Ligplaats(node, self.config)
                                             self.ligplaatsen.append(_obj)
                                             #self.config.logger.debug(_obj)
@@ -204,11 +207,11 @@ class BAGFilereader:
                                         elif node.localName == 'Nummeraanduiding':
                                             _obj = Nummeraanduiding()
                                         elif node.localName == 'Standplaats':
-                                            from objecten.standplaats import Standplaats
                                             _obj = Standplaats(node,self.config)
                                             self.standplaatsen.append(_obj)
                                         elif node.localName == 'Pand':
-                                           _obj = Pand()
+                                            _obj = Pand(node, self.config)
+                                            self.panden.append(_obj)    
                                            
                             mydb = self.config.get_database()
                             mydb.verbind()
@@ -221,6 +224,9 @@ class BAGFilereader:
                                 standplaats.insert()
                                 mydb.uitvoeren(standplaats.sql, standplaats.valuelist)
 
+                            for pand in self.panden:
+                                pand.insert()
+                                mydb.uitvoeren(pand.sql, pand.valuelist)
 
         elif node.localName == 'BAG-Mutaties-Deelbestand-LVC':
             mode = 'Mutatie'
