@@ -52,7 +52,7 @@ class Nummeraanduiding():
        return "<Nummeraanduiding('%s', '%s', '%s')>" % (self.identificatie, self.tijdvakgeldigheid, self.bron)
 
     def insert(self):
-        self.sql = """INSERT INTO nummeraanduiding (
+        self.sql = """INSERT INTO """ + self.config.schema + """.nummeraanduiding (
             identificatie,
             aanduidingrecordinactief,
             aanduidingrecordcorrectie,
@@ -82,11 +82,11 @@ class Nummeraanduiding():
 
     @staticmethod
     def drop(schema):
-        return "DROP TABLE IF EXISTS " + schema + "nummeraanduiding CASCADE;"
+        return "DROP TABLE IF EXISTS " + schema + ".nummeraanduiding CASCADE;"
     
     @staticmethod
     def create(schema):
-        return """CREATE TABLE """ + schema + """nummeraanduiding (
+        return """CREATE TABLE """ + schema + """.nummeraanduiding (
                   gid serial,
                   identificatie numeric(16,0),
                   aanduidingrecordinactief boolean,

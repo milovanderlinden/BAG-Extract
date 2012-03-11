@@ -135,7 +135,7 @@ class Database:
         self.verbind()
  
         self.cursor.execute(Ligplaats.drop(self.config.schema))
-        self.cursor.execute(Nummeraanduiding.drop)
+        self.cursor.execute(Nummeraanduiding.drop(self.config.schema))
         self.cursor.execute(Openbareruimte.drop)
         self.cursor.execute(Pand.drop(self.config.schema))
         self.cursor.execute(Standplaats.drop(self.config.schema))
@@ -148,7 +148,7 @@ class Database:
         self.cursor.execute(Gemeenteprovincie.drop)
         
         self.cursor.execute(Ligplaats.create(self.config.schema))
-        self.cursor.execute(Nummeraanduiding.create)
+        self.cursor.execute(Nummeraanduiding.create(self.config.schema))
         self.cursor.execute(Openbareruimte.create)
         self.cursor.execute(Pand.create(self.config.schema))
         self.cursor.execute(Standplaats.create(self.config.schema))
