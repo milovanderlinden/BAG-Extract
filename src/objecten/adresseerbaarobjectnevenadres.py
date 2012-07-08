@@ -8,6 +8,7 @@ class Adresseerbaarobjectnevenadres():
                   aanduidingrecordinactief boolean,
                   aanduidingrecordcorrectie integer,
                   begindatumtijdvakgeldigheid timestamp without time zone,
+                  einddatumtijdvakgeldigheid timestamp without time zone,
                   nevenadres numeric(16,0),
                   PRIMARY KEY (gid)
                 );"""

@@ -44,11 +44,11 @@ class Gemeentewoonplaats():
                   gid serial,
                   woonplaatsnaam character varying(80),
                   woonplaatscode numeric(4),
-                  ingangsdatum_woonplaats date,
+                  begindatum_woonplaats date,
                   einddatum_woonplaats date,
                   gemeentenaam character varying(80),
                   gemeentecode numeric(4),
-                  ingangsdatum_gemeente date,
+                  begindatum_gemeente date,
                   einddatum_gemeente date,
                   PRIMARY KEY (gid)
                 );"""

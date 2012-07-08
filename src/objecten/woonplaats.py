@@ -63,19 +63,19 @@ class Woonplaats():
                   aanduidingrecordcorrectie integer,
                   officieel boolean,
                   inonderzoek boolean,
+                  begindatumtijdvakgeldigheid timestamp without time zone,
+                  einddatumtijdvakgeldigheid timestamp without time zone,
                   documentnummer character varying(20),
                   documentdatum date,
                   woonplaatsnaam character varying(80),
                   woonplaatsstatus character varying(80),
-                  begindatumtijdvakgeldigheid timestamp without time zone,
-                  einddatumtijdvakgeldigheid timestamp without time zone,
                   geom_valid boolean default TRUE,
-                  geovlak geometry,
+                  geometrie geometry,
                   PRIMARY KEY (gid),
-                  CONSTRAINT enforce_dims_geometrie CHECK ((st_ndims(geovlak) = 2)),
+                  CONSTRAINT enforce_dims_geometrie CHECK ((st_ndims(geometrie) = 2)),
                   CONSTRAINT enforce_geotype_geometrie CHECK (
-                          ((geometrytype(geovlak) = 'MULTIPOLYGON'::text) OR (geovlak IS NULL))),
-                  CONSTRAINT enforce_srid_geometrie CHECK ((st_srid(geovlak) = 28992))
+                          ((geometrytype(geometrie) = 'MULTIPOLYGON'::text) OR (geometrie IS NULL))),
+                  CONSTRAINT enforce_srid_geometrie CHECK ((st_srid(geometrie) = 28992))
                 )WITH (
                         OIDS=TRUE
                 );"""

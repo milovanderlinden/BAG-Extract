@@ -2,7 +2,7 @@ class Standplaats():
     def __init__(self,xmlnode):
         self.tag = "bag_LVC:Standplaats"
         self.naam = "standplaats"
-        self.type = 'LIG'
+        self.type = 'STA'
         for node in xmlnode.childNodes:
             if node.localName == 'gerelateerdeAdressen':
                 self.gerelateerdeAdressen = GerelateerdeAdressen(node)
@@ -31,7 +31,7 @@ class Standplaats():
                     self.geometrie = ogr.CreateGeometryFromGML(str(gml))
 
     def __repr__(self):
-       return "<Ligplaats('%s','%s', '%s', '%s')>" % (self.identificatie, self.gerelateerdeAdressen, self.tijdvakgeldigheid, self.bron)
+       return "<Standplaats('%s','%s', '%s', '%s')>" % (self.identificatie, self.gerelateerdeAdressen, self.tijdvakgeldigheid, self.bron)
 
     def insert(self):
         self.sql = """INSERT INTO standplaats (identificatie, aanduidingrecordinactief,
@@ -50,18 +50,18 @@ class Standplaats():
                   aanduidingrecordcorrectie integer,
                   officieel boolean,
                   inonderzoek boolean,
+                  begindatumtijdvakgeldigheid timestamp without time zone,
+                  einddatumtijdvakgeldigheid timestamp without time zone,
                   documentnummer character varying(20),
                   documentdatum date,
                   hoofdadres numeric(16,0),
                   standplaatsstatus character varying(80),
-                  begindatumtijdvakgeldigheid timestamp without time zone,
-                  einddatumtijdvakgeldigheid timestamp without time zone,
                   geom_valid boolean default TRUE,
-                  geovlak geometry,
+                  geometrie geometry,
                   PRIMARY KEY (gid),
-                  CONSTRAINT enforce_dims_geometrie CHECK ((st_ndims(geovlak) = 3)),
+                  CONSTRAINT enforce_dims_geometrie CHECK ((st_ndims(geometrie) = 3)),
                   CONSTRAINT enforce_geotype_geometrie CHECK (
-                          ((geometrytype(geovlak) = 'POLYGON'::text) OR (geovlak IS NULL))),
-                  CONSTRAINT enforce_srid_geometrie CHECK ((st_srid(geovlak) = 28992))
+                          ((geometrytype(geometrie) = 'POLYGON'::text) OR (geometrie IS NULL))),
+                  CONSTRAINT enforce_srid_geometrie CHECK ((st_srid(geometrie) = 28992))
                 );"""
 

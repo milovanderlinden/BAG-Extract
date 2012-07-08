@@ -80,6 +80,8 @@ class Nummeraanduiding():
                   aanduidingrecordcorrectie integer,
                   officieel boolean,
                   inonderzoek boolean,
+                  begindatumtijdvakgeldigheid timestamp without time zone,
+                  einddatumtijdvakgeldigheid timestamp without time zone,
                   documentnummer character varying(20),
                   documentdatum date,
                   huisnummer numeric(5,0),
@@ -90,7 +92,5 @@ class Nummeraanduiding():
                   typeadresseerbaarobject character varying(20),
                   gerelateerdeopenbareruimte numeric(16,0),
                   gerelateerdewoonplaats numeric(16,0),
-                  begindatumtijdvakgeldigheid timestamp without time zone,
-                  einddatumtijdvakgeldigheid timestamp without time zone,
                   PRIMARY KEY (gid)
                 );"""

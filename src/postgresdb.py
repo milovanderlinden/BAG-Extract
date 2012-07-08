@@ -159,7 +159,7 @@ class Database:
         self.cursor.execute(Adresseerbaarobjectnevenadres.create)
         self.cursor.execute(Gemeentewoonplaats.create(self))
         self.cursor.execute(Gemeenteprovincie.create)
-        self.cursor.execute("select probe_geometry_columns();")
+        #self.cursor.execute("select probe_geometry_columns();")
         self.connection.commit()
         
 

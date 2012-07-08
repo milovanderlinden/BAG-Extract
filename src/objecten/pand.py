@@ -49,8 +49,8 @@ class Pand():
             documentdatum,
             pandstatus,
             bouwjaar,
-            begindatum,
-            einddatum,
+            begindatumtijdvakgeldigheid,
+            einddatumtijdvakgeldigheid,
             geometrie)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_GeomFromText(%s, %s))"""
         self.valuelist = (self.identificatie, self.inactief, \
@@ -67,18 +67,18 @@ class Pand():
                   aanduidingrecordcorrectie integer,
                   officieel boolean,
                   inonderzoek boolean,
+                  begindatumtijdvakgeldigheid timestamp without time zone,
+                  einddatumtijdvakgeldigheid timestamp without time zone,
                   documentnummer character varying(20),
                   documentdatum date,
                   pandstatus character varying(80),
                   bouwjaar numeric(4,0),
-                  begindatumtijdvakgeldigheid timestamp without time zone,
-                  einddatumtijdvakgeldigheid timestamp without time zone,
                   geom_valid boolean default TRUE,
-                  geovlak geometry,
+                  geometrie geometry,
                   PRIMARY KEY (gid),
-                  CONSTRAINT enforce_dims_geometrie CHECK ((st_ndims(geovlak) = 3)),
+                  CONSTRAINT enforce_dims_geometrie CHECK ((st_ndims(geometrie) = 3)),
                   CONSTRAINT enforce_geotype_geometrie CHECK (
-                          ((geometrytype(geovlak) = 'POLYGON'::text) OR (geovlak IS NULL))),
-                  CONSTRAINT enforce_srid_geometrie CHECK ((st_srid(geovlak) = 28992))
+                          ((geometrytype(geometrie) = 'POLYGON'::text) OR (geometrie IS NULL))),
+                  CONSTRAINT enforce_srid_geometrie CHECK ((st_srid(geometrie) = 28992))
                 );"""
 

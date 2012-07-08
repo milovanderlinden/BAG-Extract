@@ -70,6 +70,8 @@ class Openbareruimte():
                     aanduidingrecordcorrectie integer,
                     officieel boolean,
                     inonderzoek boolean,
+                    begindatumtijdvakgeldigheid timestamp without time zone,
+                    einddatumtijdvakgeldigheid timestamp without time zone,
                     documentnummer character varying(20),
                     documentdatum date,
                     openbareruimtenaam character varying(80),
@@ -77,8 +79,6 @@ class Openbareruimte():
                     openbareruimtetype character varying(40),
                     gerelateerdewoonplaats numeric(16,0),
                     verkorteopenbareruimtenaam character varying(80),
-                    begindatumtijdvakgeldigheid timestamp without time zone,
-                    einddatumtijdvakgeldigheid timestamp without time zone,
                     PRIMARY KEY (gid)
                 );"""
 

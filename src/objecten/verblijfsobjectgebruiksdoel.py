@@ -8,6 +8,7 @@ class Verblijfsobjectgebruiksdoel():
                   aanduidingrecordinactief boolean,
                   aanduidingrecordcorrectie integer,
                   begindatumtijdvakgeldigheid timestamp without time zone,
+                  einddatumtijdvakgeldigheid timestamp without time zone,
                   gebruiksdoelverblijfsobject character varying(50),
                   PRIMARY KEY (gid)
                 );"""
