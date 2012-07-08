@@ -1,49 +1,58 @@
+from objecten.gerelateerdewoonplaats import Gerelateerdewoonplaats
+from objecten.gerelateerdeopenbareruimte import Gerelateerdeopenbareruimte
+from objecten.tijdvakgeldigheid import Tijdvakgeldigheid
+from objecten.bron import Bron
+
 class Nummeraanduiding():
-    def __init__(self,xmlnode):
+
+    def __init__(self, xmlnode, configuratie):
+        self.config = configuratie
         self.tag = "bag_LVC:Nummeraanduiding"
         self.naam = "Nummeraanduiding"
         self.type = 'NUM'
+
         self.huisletter = None
         self.huisnummertoevoeging = None
-        self.gerelateerdeWoonplaats = GerelateerdeWoonplaats()
         self.postcode = None
+        self.gerelateerdewoonplaats = Gerelateerdewoonplaats(None,self.config)
+        mydb = self.config.get_database()
         for node in xmlnode.childNodes:
             if node.localName == 'bron':
-                self.bron = Bron(node)
+                self.bron = Bron(node, self.config)
             if node.localName == 'tijdvakgeldigheid':
-                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node, self.config)
             if node.localName == 'identificatie':
-                self.identificatie = getText(node.childNodes)
+                self.identificatie = mydb.getText(node.childNodes)
             if node.localName == 'aanduidingRecordInactief':
-                self.inactief = getText(node.childNodes)
+                self.inactief = mydb.getBoolean(node.childNodes)
             if node.localName == 'aanduidingRecordCorrectie':
-                self.correctie = getText(node.childNodes)
+                self.correctie = mydb.getText(node.childNodes)
             if node.localName == 'officieel':
-                self.officieel = getText(node.childNodes)
+                self.officieel = mydb.getBoolean(node.childNodes)
             if node.localName == 'inOnderzoek':
-                self.inonderzoek = getText(node.childNodes)
+                self.inonderzoek = mydb.getBoolean(node.childNodes)
             if node.localName == 'huisnummer':
-                self.huisnummer = getText(node.childNodes)
+                self.huisnummer = mydb.getText(node.childNodes)
             if node.localName == 'huisletter':
-                self.huisletter = getText(node.childNodes)
+                self.huisletter = mydb.getText(node.childNodes)
             if node.localName == 'huisnummertoevoeging':
-                self.huisnummertoevoeging = getText(node.childNodes)
+                self.huisnummertoevoeging = mydb.getText(node.childNodes)
             if node.localName == 'postcode':
-                self.postcode = getText(node.childNodes)
+                self.postcode = mydb.getText(node.childNodes)
             if node.localName == 'nummeraanduidingStatus':
-                self.status = getText(node.childNodes)
+                self.status = mydb.getText(node.childNodes)
             if node.localName == 'typeAdresseerbaarObject':
-                self.typeAdresseerbaarObject = getText(node.childNodes)
+                self.typeAdresseerbaarObject = mydb.getText(node.childNodes)
             if node.localName == 'gerelateerdeOpenbareRuimte':
-                self.gerelateerdeOpenbareRuimte = GerelateerdeOpenbareRuimte(node)
+                self.gerelateerdeopenbareruimte = Gerelateerdeopenbareruimte(node, self.config)
             if node.localName == 'gerelateerdeWoonplaats':
-                self.gerelateerdeWoonplaats = GerelateerdeWoonplaats(node)
+                self.gerelateerdewoonplaats = Gerelateerdewoonplaats(node, self.config)
 
     def __repr__(self):
        return "<Nummeraanduiding('%s', '%s', '%s')>" % (self.identificatie, self.tijdvakgeldigheid, self.bron)
 
     def insert(self):
-        self.sql = """INSERT INTO nummeraanduiding (
+        self.sql = """INSERT INTO """ + self.config.schema + """.nummeraanduiding (
             identificatie,
             aanduidingrecordinactief,
             aanduidingrecordcorrectie,
@@ -59,21 +68,25 @@ class Nummeraanduiding():
             typeadresseerbaarobject,
             gerelateerdeopenbareruimte,
             gerelateerdewoonplaats,
-            begindatum,
-            einddatum)
+            begindatumtijdvakgeldigheid,
+            einddatumtijdvakgeldigheid)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         self.valuelist = (self.identificatie, self.inactief, \
             self.correctie, self.officieel, self.inonderzoek, \
             self.bron.documentnummer, self.bron.documentdatum, \
             self.huisnummer, self.huisletter, self.huisnummertoevoeging, \
             self.postcode, self.status, self.typeAdresseerbaarObject, \
-            self.gerelateerdeOpenbareRuimte.identificatie, \
-            self.gerelateerdeWoonplaats.identificatie, self.tijdvakgeldigheid.begindatum, \
+            self.gerelateerdeopenbareruimte.identificatie, \
+            self.gerelateerdewoonplaats.identificatie, self.tijdvakgeldigheid.begindatum, \
             self.tijdvakgeldigheid.einddatum)
 
-    drop = "DROP TABLE IF EXISTS nummeraanduiding CASCADE;"
+    @staticmethod
+    def drop(schema):
+        return "DROP TABLE IF EXISTS " + schema + ".nummeraanduiding CASCADE;"
     
-    create = """CREATE TABLE nummeraanduiding (
+    @staticmethod
+    def create(schema):
+        return """CREATE TABLE """ + schema + """.nummeraanduiding (
                   gid serial,
                   identificatie numeric(16,0),
                   aanduidingrecordinactief boolean,
