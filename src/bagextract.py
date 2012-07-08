@@ -27,18 +27,18 @@ def main():
     """
     Voorbeelden: 
     1. Initialiseer een database:
-    python BAG.py -H localhost -d bag -U postgres -W postgres -c
+    python bagextract.py -H localhost -d bag -U postgres -W postgres -c
 
     2. Importeer een extract in de database:
-    python BAG.py -H localhost -d bag -U postgres -W postgres -e 9999STA01052011-000002.xml
+    python bagextract.py -H localhost -d bag -U postgres -W postgres -e 9999STA01052011-000002.xml
 
     of
 
-    python BAG.py -H localhost -d bag -U postgres -W postgres -e 9999STA01052011.zip
+    python bagextract.py -H localhost -d bag -U postgres -W postgres -e 9999STA01052011.zip
 
     Importeer gemeente_woonplaats informatie van het kadaster http://www.kadaster.nl/bag/docs/BAG_Overzicht_aangesloten_gemeenten.zip
 
-    python BAG.py -H localhost -d bag -U postgres -W postgres -e BAG_Overzicht_aangesloten_gemeenten.zip
+    python bagextract.py -H localhost -d bag -U postgres -W postgres -e BAG_Overzicht_aangesloten_gemeenten.zip
 
     Theoretisch is het mogelijk de hele bag in te lezen vanuit de "hoofd" zip, maar dit is nog niet getest op
     geheugen-problemen.
