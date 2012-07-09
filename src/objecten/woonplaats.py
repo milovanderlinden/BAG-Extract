@@ -1,60 +1,63 @@
+from objecten.tijdvakgeldigheid import Tijdvakgeldigheid
+from objecten.bron import Bron
 class Woonplaats():
-    def __init__(self, xmlnode):
+    """
+    BAG Klasse Woonplaats
+    Class voor het BAG-objecttype Woonplaats.
+    """
+    
+    def __init__(self, xmlnode, configuratie):
+        self.config = configuratie
         self.tag = "bag_LVC:Woonplaats"
         self.naam = "Woonplaats"
         self.type = 'WPL'
+        
+        mydb = self.config.get_database()
         for node in xmlnode.childNodes:
             if node.localName == 'woonplaatsNaam':
-                self.naam = getText(node.childNodes)
+                self.naam = mydb.getText(node.childNodes)
             if node.localName == 'bron':
-                self.bron = Bron(node)
+                self.bron = Bron(node, self.config)
             if node.localName == 'tijdvakgeldigheid':
-                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node, self.config)
             if node.localName == 'identificatie':
-                self.identificatie = getText(node.childNodes)
+                self.identificatie = mydb.getText(node.childNodes)
             if node.localName == 'aanduidingRecordInactief':
-                self.inactief = getText(node.childNodes)
+                self.inactief = mydb.getBoolean(node.childNodes)
             if node.localName == 'aanduidingRecordCorrectie':
-                self.correctie = getText(node.childNodes)
+                self.correctie = mydb.getText(node.childNodes)
             if node.localName == 'officieel':
-                self.officieel = getText(node.childNodes)
+                self.officieel = mydb.getBoolean(node.childNodes)
             if node.localName == 'inOnderzoek':
-                self.inonderzoek = getText(node.childNodes)
+                self.inonderzoek = mydb.getBoolean(node.childNodes)
             if node.localName == 'woonplaatsStatus':
-                self.status = getText(node.childNodes)
+                self.status = mydb.getText(node.childNodes)
             if node.localName == 'woonplaatsGeometrie':
-                # zet de geometrie om naar echte geometrie (ogr) voordeel is dat je dit naar
-                # shape, wkt, wkb etc. kunt exporteren
-                #self.geometrie = gettext(node.childNodes)
-                multigeom = ogr.Geometry( type= ogr.wkbMultiPolygon )
                 for geometrie in node.childNodes:
                     # sla pure tekst nodes over
                     if geometrie.nodeType == node.TEXT_NODE:
                         continue
-
-                    gml = geometrie.toxml()
-                    simplegeom = ogr.CreateGeometryFromGML(str(gml))
-                    if simplegeom.GetGeometryType() == 6: #multisurface!
-                        multigeom = simplegeom
-                    else:
-                        multigeom.AddGeometryDirectly(simplegeom)
-                self.geometrie = multigeom
-
+                    import sys
+                    self.geometrie = geometrie.toxml()
+                    
     def __repr__(self):
        return "<Woonplaats('%s','%s', '%s')>" % (self.tag, self.naam, self.type)
     
     def insert(self):
-        self.sql = """INSERT INTO woonplaats (identificatie, aanduidingrecordinactief,
+        _sql = "INSERT INTO " + self.config.schema + ".woonplaats ("
+        self.sql = _sql + """identificatie, aanduidingrecordinactief,
             aanduidingrecordcorrectie, officieel, inonderzoek, documentnummer, documentdatum, woonplaatsnaam,
             woonplaatsstatus, 
-            begindatum, einddatum, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_GeomFromText(%s,%s))"""
+            begindatumtijdvakgeldigheid, einddatumtijdvakgeldigheid, geometrie) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s,ST_MULTI(ST_GeomFromGML(%s)))"""
         self.valuelist = (self.identificatie, self.inactief, \
             self.correctie, self.officieel, self.inonderzoek, self.bron.documentnummer, self.bron.documentdatum, \
             self.naam, self.status, self.tijdvakgeldigheid.begindatum, \
-            self.tijdvakgeldigheid.einddatum, str(self.geometrie.ExportToWkt()), '28992')
+            self.tijdvakgeldigheid.einddatum, self.geometrie)
         #return self.sql, self.valuelist
 
-    drop = "DROP TABLE IF EXISTS woonplaats CASCADE;"
+    @staticmethod
+    def drop(schema):
+        return "DROP TABLE IF EXISTS " + schema + ".woonplaats CASCADE;"
     
     create = """CREATE TABLE woonplaats (
                   gid serial,

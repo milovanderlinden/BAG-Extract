@@ -7,6 +7,7 @@
 import sys
 import os
 import logging
+import platform
 from time import gmtime, strftime
 
 try:
@@ -23,7 +24,7 @@ class ArgParser(argparse.ArgumentParser):
 
 
 def main():
-
+    version = "1.5"
     """
     Voorbeelden: 
     1. Initialiseer een database:
@@ -43,7 +44,9 @@ def main():
     Theoretisch is het mogelijk de hele bag in te lezen vanuit de "hoofd" zip, maar dit is nog niet getest op
     geheugen-problemen.
     """
-
+    
+    sys.stdout.write("Info: versie(%s) %s(%s) op %s\n" % (version, platform.python_implementation(), platform.python_version(), platform.platform()))
+    
     parser = ArgParser(description='bag-extract, commandline tool voor het extraheren en inlezen van BAG bestanden',
         epilog="Configureer de database in extract.conf of geef eigen versie van extract.conf via -f of geef parameters via commando regel expliciet op")
     parser.add_argument('-c', '--dbinit', action='store_true', help='verwijdert alle BAG tabellen en maakt deze opnieuw aan')
@@ -70,27 +73,29 @@ def main():
         myconfig.logger.setLevel(logging.DEBUG)
     else:
         myconfig.logger.setLevel(logging.INFO)
+    
+    
         
     if args.dbinit:
         mydb = myconfig.get_database()
         mydb.maak_database()
-        
+        myconfig.logger.info("create beeindigd")
     elif args.extract:
         from bagfilereader import BAGFilereader
         myreader = BAGFilereader(myconfig)
         myreader.process()
-        
+        myconfig.logger.info("extract beeindigd")
     elif args.query:
         #TODO geen args gebruiken maar BAGConfig.
         # Op deze manier gaan beide configuraties uit de pas lopen met kans op fouten
         # Voer willekeurig SQL script uit uit
         mydb = myconfig.get_database()
         mydb.file_uitvoeren(myconfig.query)
-        
+        myconfig.logger.info("query beeindigd")
     else:
-        myconfig.logger.critical("Kan de opdracht niet verwerken. Type -h of --help voor een overzicht van parameters")
+        sys.stdout.write("      Type -h of --help voor een overzicht van parameters\n")
 
-    myconfig.logger.info("bagextract.py beeindigd")
+    
     sys.exit()
     
 if __name__ == "__main__":

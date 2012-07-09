@@ -168,6 +168,7 @@ class BAGFilereader:
         from objecten.standplaats import Standplaats
         from objecten.pand import Pand
         from objecten.nummeraanduiding import Nummeraanduiding
+        from objecten.woonplaats import Woonplaats
 
         self.ligplaatsen = []
         self.verblijfsobjecten = []
@@ -175,6 +176,7 @@ class BAGFilereader:
         self.nummeraanduidingen = []
         self.standplaatsen = []
         self.panden = []
+        self.woonplaatsen = []
         
         mode = "Onbekend"
 
@@ -199,9 +201,9 @@ class BAGFilereader:
                                         if node.localName == 'Ligplaats':
                                             _obj = Ligplaats(node, self.config)
                                             self.ligplaatsen.append(_obj)
-                                            #self.config.logger.debug(_obj)
                                         elif node.localName == 'Woonplaats':
-                                            _obj = Woonplaats()
+                                            _obj = Woonplaats(node, self.config)
+                                            self.woonplaatsen.append(_obj)
                                         elif node.localName == 'Verblijfsobject':
                                             _obj = Verblijfsobject()
                                         elif node.localName == 'OpenbareRuimte':
@@ -222,10 +224,16 @@ class BAGFilereader:
                             # TODO Momenteel worden de database acties geloopt en wordt elk individueel record gecommit.
                             # Ik denk erover om de commits te centraliseren en commitloops van bepaalde volumes te maken, b.v. een commitloop per duizend
                             # Dat maakt rollbacks ook eenvoudiger
+                            for woonplaats in self.woonplaatsen:
+                                woonplaats.insert()
+
+                            mydb.bulk(self.woonplaatsen)
 
                             for ligplaats in self.ligplaatsen:
+                                #array per bestand? Even kijken of het geheugen dat aan kan.
                                 ligplaats.insert()
-                                mydb.uitvoeren(ligplaats.sql, ligplaats.valuelist)            
+
+                            mydb.bulk(self.ligplaatsen)            
 
                             for nummeraanduiding in self.nummeraanduidingen:
                                 nummeraanduiding.insert()
@@ -275,7 +283,6 @@ class BAGFilereader:
                                                     origineelObj = None
                                                     nieuwObj = None
 
-                            #Log.log.endTimer("objCreate (mutaties) - objs=" + str(len(self.bagObjecten)))
         else:
             BAGConfig.logger.warn("kan node niet verwerken: " + node.localName)
             return

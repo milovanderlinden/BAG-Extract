@@ -205,6 +205,23 @@ class Database:
                     e = sys.exc_info()[1]
                     self.config.logger.error("Schema %s kon niet worden gemaakt: %s" % (self.config.schema, str(e)))
 
+    def bulk(self, objectset):
+        try:
+            for obj in objectset:
+                if obj.valuelist:
+                    #self.config.logger.debug("postgresdb.uitvoeren(%s, %s)" % (sql, parameters))
+                    self.cursor.execute(obj.sql, obj.valuelist)
+                else:
+                        #self.config.logger.debug("postgresdb.uitvoeren(%s)" % sql)
+                        self.cursor.execute(obj.sql)
+
+            self.connection.commit()
+
+        except Exception:
+            self.connection.rollback()
+            e = sys.exc_info()[1]
+            self.config.logger.error("%s" % str(e))
+
     def uitvoeren(self, sql, parameters=None):
         try:
             if parameters:

@@ -28,7 +28,7 @@ class Ligplaats():
         self.tag = "bag_LVC:Ligplaats"
         self.naam = "ligplaats"
         self.type = 'LIG'
-        
+
         mydb = self.config.get_database()
         for node in xmlnode.childNodes:
             if node.localName == 'gerelateerdeAdressen':
@@ -71,7 +71,7 @@ class Ligplaats():
 
     @staticmethod
     def drop(schema):
-        return "DROP TABLE IF EXISTS " + schema + ".ligplaats CASCADE;"
+        return "DROP TABLE IF EXISTS " + schema + ".ligplaats CASCADE;DROP VIEW IF EXISTS "  + schema + ".ligplaatsactueelbestaand;"
 
     @staticmethod
     def create(schema):
@@ -95,6 +95,27 @@ class Ligplaats():
                     CONSTRAINT enforce_geotype_geometrie CHECK (
                           ((geometrytype(geometrie) = 'POLYGON'::text) OR (geometrie IS NULL))),
                     CONSTRAINT enforce_srid_geometrie CHECK ((st_srid(geometrie) = 28992))
-                );"""
-
-
+                );
+                CREATE VIEW ligplaatsactueelbestaand AS
+                    SELECT 
+                        lp.gid,
+                        lp.identificatie,
+                        lp.aanduidingrecordinactief,
+                        lp.aanduidingrecordcorrectie,
+                        lp.officieel,
+                        lp.inonderzoek,
+                        lp.documentnummer,
+                        lp.documentdatum,
+                        lp.hoofdadres,
+                        lp.ligplaatsstatus,
+                        lp.begindatumtijdvakgeldigheid,
+                        lp.einddatumtijdvakgeldigheid,
+                        lp.geometrie
+                    FROM """ + schema + """.ligplaats as lp
+                    WHERE
+                        lp.begindatumtijdvakgeldigheid <= LOCALTIMESTAMP
+                    AND (lp.einddatumtijdvakgeldigheid is NULL OR lp.einddatumtijdvakgeldigheid >= LOCALTIMESTAMP)
+                    AND lp.aanduidingrecordinactief = FALSE
+                    AND lp.geom_valid = TRUE
+                    AND lp.ligplaatsstatus <> 'Plaats ingetrokken'
+                ;"""
