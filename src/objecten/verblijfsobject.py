@@ -1,35 +1,42 @@
+from objecten.tijdvakgeldigheid import Tijdvakgeldigheid
+from objecten.bron import Bron
+
+
 class Verblijfsobject():
-    def __init__(self,xmlnode):
+    def __init__(self,xmlnode, configuratie):
+        self.config = configuratie
         self.tag = "bag_LVC:Verblijfsobject"
         self.naam = "Verblijfsobject"
         self.type = 'VBO'
         self.correctie = None
         self.gebruiksdoel = None
+
+        mydb = self.config.get_database()        
         for node in xmlnode.childNodes:
             if node.localName == 'gerelateerdeAdressen':
                 self.gerelateerdeAdressen = GerelateerdeAdressen(node)
             if node.localName == 'bron':
-                self.bron = Bron(node)
+                self.bron = Bron(node, self.config)
             if node.localName == 'tijdvakgeldigheid':
-                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node, self.config)
             if node.localName == 'identificatie':
-                self.identificatie = getText(node.childNodes)
+                self.identificatie = mydb.getText(node.childNodes)
             if node.localName == 'aanduidingRecordInactief':
-               self.inactief = getText(node.childNodes)
+               self.inactief = mydb.getBoolean(node.childNodes)
             if node.localName == 'aanduidingRecordCorrectie':
-                self.correcte = getText(node.childNodes)
+                self.correcte = mydb.getText(node.childNodes)
             if node.localName == 'officieel':
-                self.officieel = getText(node.childNodes)
+                self.officieel = mydb.getBoolean(node.childNodes)
             if node.localName == 'inOnderzoek':
-                self.inonderzoek = getText(node.childNodes)
+                self.inonderzoek = mydb.getBoolean(node.childNodes)
             if node.localName == 'verblijfsobjectStatus':
-                self.status = getText(node.childNodes)
+                self.status = mydb.getText(node.childNodes)
             if node.localName == 'gebruiksdoelVerblijfsobject':
-                self.gebruiksdoel = getText(node.childNodes)
+                self.gebruiksdoel = mydb.getText(node.childNodes)
             if node.localName == 'oppervlakteVerblijfsobject':
-                self.oppervlakte = getText(node.childNodes)
+                self.oppervlakte = mydb.getText(node.childNodes)
             if node.localName == 'gerelateerdPand':
-                self.gerelateerdPand = GerelateerdPand(node)
+                self.gerelateerdPand = GerelateerdPand(node, self.config)
             if node.localName == 'verblijfsobjectGeometrie':
                 # zet de geometrie om naar echte geometrie (ogr) voordeel is dat je dit naar
                 # shape, wkt, wkb etc. kunt exporteren

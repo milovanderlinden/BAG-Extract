@@ -228,6 +228,11 @@ class BAGFilereader:
                             # TODO Momenteel worden de database acties geloopt en wordt elk individueel record gecommit.
                             # Ik denk erover om de commits te centraliseren en commitloops van bepaalde volumes te maken, b.v. een commitloop per duizend
                             # Dat maakt rollbacks ook eenvoudiger
+                            for verblijfsobject in self.verblijfsobjecten:
+                                verblijfsobject.insert()
+
+                            mydb.bulk(self.verblijfsobjecten)
+                            
                             for openbareruimte in self.openbareruimten:
                                 openbareruimte.insert()
 
