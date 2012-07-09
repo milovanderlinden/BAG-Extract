@@ -169,10 +169,12 @@ class BAGFilereader:
         from objecten.pand import Pand
         from objecten.nummeraanduiding import Nummeraanduiding
         from objecten.woonplaats import Woonplaats
+        from objecten.openbareruimte import Openbareruimte
+        from objecten.verblijfsobject import Verblijfsobject
 
         self.ligplaatsen = []
         self.verblijfsobjecten = []
-        self.openbareRuimten = []
+        self.openbareruimten = []
         self.nummeraanduidingen = []
         self.standplaatsen = []
         self.panden = []
@@ -205,9 +207,11 @@ class BAGFilereader:
                                             _obj = Woonplaats(node, self.config)
                                             self.woonplaatsen.append(_obj)
                                         elif node.localName == 'Verblijfsobject':
-                                            _obj = Verblijfsobject()
+                                            _obj = Verblijfsobject(node, self.config)
+                                            self.verblijfsobjecten.append(_obj)
                                         elif node.localName == 'OpenbareRuimte':
-                                            _obj = OpenbareRuimte()
+                                            _obj = Openbareruimte(node, self.config)
+                                            self.openbareruimten.append(_obj)
                                         elif node.localName == 'Nummeraanduiding':
                                             _obj = Nummeraanduiding(node, self.config)
                                             self.nummeraanduidingen.append(_obj)
@@ -224,6 +228,11 @@ class BAGFilereader:
                             # TODO Momenteel worden de database acties geloopt en wordt elk individueel record gecommit.
                             # Ik denk erover om de commits te centraliseren en commitloops van bepaalde volumes te maken, b.v. een commitloop per duizend
                             # Dat maakt rollbacks ook eenvoudiger
+                            for openbareruimte in self.openbareruimten:
+                                openbareruimte.insert()
+
+                            mydb.bulk(self.openbareruimten)
+                            
                             for woonplaats in self.woonplaatsen:
                                 woonplaats.insert()
 

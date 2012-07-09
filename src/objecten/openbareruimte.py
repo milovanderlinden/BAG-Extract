@@ -1,6 +1,6 @@
-import datetime
-import time
-import xml.dom.minidom as dom
+from objecten.gerelateerdewoonplaats import Gerelateerdewoonplaats
+from objecten.tijdvakgeldigheid import Tijdvakgeldigheid
+from objecten.bron import Bron
 
 class Openbareruimte():
     """
@@ -8,34 +8,37 @@ class Openbareruimte():
     Class voor het BAG-objecttype Openbareruimte.
     """
     
-    def __init__(self,xmlnode):
+    def __init__(self, xmlnode, configuratie):
+        self.config = configuratie
         self.tag = "bag_LVC:OpenbareRuimte"
         self.naam = "OpenbareRuimte"
         self.type = 'OPR'
+        
+        mydb = self.config.get_database()
         for node in xmlnode.childNodes:
             if node.localName == 'bron':
-                self.bron = Bron(node)
+                self.bron = Bron(node, self.config)
             if node.localName == 'tijdvakgeldigheid':
-                self.tijdvakgeldigheid = Tijdvakgeldigheid(node)
+                self.tijdvakgeldigheid = Tijdvakgeldigheid(node, self.config)
             if node.localName == 'identificatie':
-                self.identificatie = getText(node.childNodes)
+                self.identificatie = mydb.getText(node.childNodes)
             if node.localName == 'aanduidingRecordInactief':
-                self.inactief = getText(node.childNodes)
+                self.inactief = mydb.getBoolean(node.childNodes)
             if node.localName == 'aanduidingRecordCorrectie':
-                self.correctie = getText(node.childNodes)
+                self.correctie = mydb.getText(node.childNodes)
             if node.localName == 'officieel':
-                self.officieel = getText(node.childNodes)
+                self.officieel = mydb.getBoolean(node.childNodes)
             if node.localName == 'inOnderzoek':
-                self.inonderzoek = getText(node.childNodes)
+                self.inonderzoek = mydb.getBoolean(node.childNodes)
             if node.localName == 'openbareRuimteNaam':
-                self.naam = getText(node.childNodes)
+                self.naam = mydb.getText(node.childNodes)
             if node.localName == 'openbareruimteStatus':
                 #let op! kleine r van ruimte, is dit een fout in de xml?
-                self.status = getText(node.childNodes)
+                self.status = mydb.getText(node.childNodes)
             if node.localName == 'openbareRuimteType':
-                self.type = getText(node.childNodes)
+                self.type = mydb.getText(node.childNodes)
             if node.localName == 'gerelateerdeWoonplaats':
-                self.gerelateerdewoonplaats = Gerelateerdewoonplaats(node)
+                self.gerelateerdewoonplaats = Gerelateerdewoonplaats(node, self.config)
 
     def __repr__(self):
        return "<OpenbareRuimte('%s','%s', '%s', '%s')>" % (self.identificatie, self.naam, self.tijdvakgeldigheid, self.bron)
@@ -53,17 +56,21 @@ class Openbareruimte():
             openbareruimtestatus,
             openbareruimtetype,
             gerelateerdewoonplaats,
-            begindatum,
-            einddatum)
+            begindatumtijdvakgeldigheid,
+            einddatumtijdvakgeldigheid)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         self.valuelist = (self.identificatie, self.inactief, \
             self.correctie, self.officieel, self.inonderzoek, \
             self.bron.documentnummer, self.bron.documentdatum, \
-            self.naam, self.type, self.status, self.gerelateerdeWoonplaats.identificatie,self.tijdvakgeldigheid.begindatum, self.tijdvakgeldigheid.einddatum)
+            self.naam, self.type, self.status, self.gerelateerdewoonplaats.identificatie,self.tijdvakgeldigheid.begindatum, self.tijdvakgeldigheid.einddatum)
     
-    drop = "DROP TABLE IF EXISTS openbareruimte CASCADE;"
+    @staticmethod
+    def drop(schema):
+        return "DROP TABLE IF EXISTS " + schema + ".openbareruimte CASCADE;"
         
-    create = """CREATE TABLE openbareruimte (
+    @staticmethod
+    def create(schema):
+        return """CREATE TABLE """ + schema + """.openbareruimte (
                     gid serial,
                     identificatie numeric(16,0),
                     aanduidingrecordinactief boolean,

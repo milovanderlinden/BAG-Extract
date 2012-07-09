@@ -166,12 +166,16 @@ class Database:
     def verbind(self):
         self.config.logger.debug("postgresdb.verbind()")
         try:
-
+            if not self.config.port:
+                #Val terug op default poort
+                self.config.port = "5432"
+                
             self.config.logger.info('Verbinding maken met ' + self.config.database)
-            self.connection = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s'" % (self.config.database,
+            self.connection = psycopg2.connect("dbname='%s' user='%s' host='%s' password='%s' port='%s'" % (self.config.database,
                                                                                                   self.config.user,
                                                                                                   self.config.host,
-                                                                                                 self.config.password))
+                                                                                                  self.config.password,
+                                                                                                  self.config.port))
             self.cursor = self.connection.cursor()
             self.config.logger.info("Verbonden")
             self.zet_schema()

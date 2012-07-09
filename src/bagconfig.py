@@ -13,7 +13,6 @@ try:
 except:
     from configparser import ConfigParser
 
-
 class BAGConfig:
     logger = logging.getLogger('bagextractlog')
     # create console handler and set level to debug

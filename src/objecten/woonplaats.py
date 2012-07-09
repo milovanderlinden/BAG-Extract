@@ -59,7 +59,9 @@ class Woonplaats():
     def drop(schema):
         return "DROP TABLE IF EXISTS " + schema + ".woonplaats CASCADE;"
     
-    create = """CREATE TABLE woonplaats (
+    @staticmethod
+    def create(schema):
+        return """CREATE TABLE """ + schema + """.woonplaats (
                   gid serial,
                   identificatie numeric(16,0),
                   aanduidingrecordinactief boolean,
