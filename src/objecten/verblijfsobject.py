@@ -81,8 +81,13 @@ class Verblijfsobject():
             self.gerelateerdeAdressen.hoofdadres, self.gerelateerdPand.identificatie, self.gebruiksdoel, self.status, self.oppervlakte, self.tijdvakgeldigheid.begindatum, \
             self.tijdvakgeldigheid.einddatum, str(self.punt.ExportToWkt()), '28992', vlakval,'28992')
 
-    drop = "DROP TABLE IF EXISTS verblijfsobject CASCADE;"
-    create = """CREATE TABLE verblijfsobject (
+    @staticmethod      
+    def drop(schema):
+        return "DROP TABLE IF EXISTS " + schema + ".verblijfsobject CASCADE;"
+    
+    @staticmethod      
+    def create(schema):
+        return """CREATE TABLE """ + schema + """.verblijfsobject (
                   gid serial,
                   identificatie numeric(16,0),
                   aanduidingrecordinactief boolean,

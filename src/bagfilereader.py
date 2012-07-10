@@ -225,41 +225,33 @@ class BAGFilereader:
                             mydb = self.config.get_database()
                             mydb.verbind()
                             
-                            # TODO Momenteel worden de database acties geloopt en wordt elk individueel record gecommit.
-                            # Ik denk erover om de commits te centraliseren en commitloops van bepaalde volumes te maken, b.v. een commitloop per duizend
-                            # Dat maakt rollbacks ook eenvoudiger
                             for verblijfsobject in self.verblijfsobjecten:
                                 verblijfsobject.insert()
-
                             mydb.bulk(self.verblijfsobjecten)
                             
                             for openbareruimte in self.openbareruimten:
                                 openbareruimte.insert()
-
                             mydb.bulk(self.openbareruimten)
                             
                             for woonplaats in self.woonplaatsen:
                                 woonplaats.insert()
-
                             mydb.bulk(self.woonplaatsen)
 
                             for ligplaats in self.ligplaatsen:
-                                #array per bestand? Even kijken of het geheugen dat aan kan.
                                 ligplaats.insert()
-
                             mydb.bulk(self.ligplaatsen)            
 
                             for nummeraanduiding in self.nummeraanduidingen:
                                 nummeraanduiding.insert()
-                                mydb.uitvoeren(nummeraanduiding.sql, nummeraanduiding.valuelist)
+                            mydb.bulk(self.nummeraanduidingen)
 
                             for standplaats in self.standplaatsen:
                                 standplaats.insert()
-                                mydb.uitvoeren(standplaats.sql, standplaats.valuelist)
+                            mydb.bulk(self.standplaatsen)
 
                             for pand in self.panden:
                                 pand.insert()
-                                mydb.uitvoeren(pand.sql, pand.valuelist)
+                            mydb.bulk(self.panden)
 
         elif node.localName == 'BAG-Mutaties-Deelbestand-LVC':
             mode = 'Mutatie'

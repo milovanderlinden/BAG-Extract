@@ -1,8 +1,12 @@
 class Verblijfsobjectgebruiksdoel():
 
-    drop = "DROP TABLE IF EXISTS verblijfsobjectgebruiksdoel CASCADE;"
+    @staticmethod      
+    def drop(schema):
+        return "DROP TABLE IF EXISTS " + schema + ".verblijfsobjectgebruiksdoel CASCADE;"
     
-    create = """CREATE TABLE verblijfsobjectgebruiksdoel (
+    @staticmethod      
+    def create(schema):
+        return """CREATE TABLE """ + schema + """.verblijfsobjectgebruiksdoel (
                   gid serial,
                   identificatie numeric(16,0),
                   aanduidingrecordinactief boolean,

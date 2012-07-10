@@ -1,7 +1,11 @@
 class Verblijfsobjectpand():
-    drop = "DROP TABLE IF EXISTS verblijfsobjectpand CASCADE;"
+    @staticmethod      
+    def drop(schema):
+        return "DROP TABLE IF EXISTS " + schema + ".verblijfsobjectpand CASCADE;"
 
-    create = """CREATE TABLE verblijfsobjectpand (
+    @staticmethod      
+    def create(schema):
+        return """CREATE TABLE """ + schema + """.verblijfsobjectpand (
                   gid serial,
                   identificatie numeric(16,0),
                   aanduidingrecordinactief boolean,

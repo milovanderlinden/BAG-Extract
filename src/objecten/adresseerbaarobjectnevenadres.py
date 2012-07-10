@@ -1,8 +1,12 @@
 class Adresseerbaarobjectnevenadres():
 
-    drop = "DROP TABLE IF EXISTS adresseerbaarobjectnevenadres CASCADE;"
+    @staticmethod
+    def drop(schema):
+        return "DROP TABLE IF EXISTS " + schema + ".adresseerbaarobjectnevenadres CASCADE;"
 
-    create = """CREATE TABLE adresseerbaarobjectnevenadres (
+    @staticmethod
+    def create(schema):
+        return """CREATE TABLE """ + schema + """.adresseerbaarobjectnevenadres (
                   gid serial,
                   identificatie numeric(16,0),
                   aanduidingrecordinactief boolean,

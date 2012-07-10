@@ -1,6 +1,12 @@
 class Gemeenteprovincie():
-    drop = "DROP TABLE IF EXISTS gemeente_provincie;"
-    create = """CREATE TABLE gemeente_provincie (
+    
+    @staticmethod
+    def drop(schema):
+        return "DROP TABLE IF EXISTS  " + schema + ".gemeente_provincie;"
+    
+    @staticmethod
+    def create(schema):
+        return"""CREATE TABLE """ + schema + """.gemeente_provincie (
                   gid serial,
                   gemeentecode numeric(4),
                   gemeentenaam character varying(80),
