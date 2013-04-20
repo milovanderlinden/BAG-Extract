@@ -1,4 +1,5 @@
 *.pyc
+*.nja
 .project
 .pydevproject
 BAG-milo.conf
@@ -8,3 +9,5 @@ issues.txt
 *.conf
 *.mp4
 *.csv
+bagextract.conf
+

@@ -15,7 +15,7 @@ try:
 except:
     formatter = logging.Formatter('%(levelname)s - %(message)s')
     logging.critical("Python argparse is vereist")
-    sys.exit()   
+    sys.exit()
 
 class ArgParser(argparse.ArgumentParser):
      def error(self, message):
@@ -26,7 +26,7 @@ class ArgParser(argparse.ArgumentParser):
 def main():
     version = "1.5"
     """
-    Voorbeelden: 
+    Voorbeelden:
     1. Initialiseer een database:
     python bagextract.py -H localhost -d bag -U postgres -W postgres -c
 
@@ -44,9 +44,9 @@ def main():
     Theoretisch is het mogelijk de hele bag in te lezen vanuit de "hoofd" zip, maar dit is nog niet getest op
     geheugen-problemen.
     """
-    
+
     sys.stdout.write("Info: versie(%s) %s(%s) op %s\n" % (version, platform.python_implementation(), platform.python_version(), platform.platform()))
-    
+
     parser = ArgParser(description='bag-extract, commandline tool voor het extraheren en inlezen van BAG bestanden',
         epilog="Configureer de database in extract.conf of geef eigen versie van extract.conf via -f of geef parameters via commando regel expliciet op")
     parser.add_argument('-c', '--dbinit', action='store_true', help='verwijdert alle BAG tabellen en maakt deze opnieuw aan')
@@ -55,10 +55,10 @@ def main():
     parser.add_argument('-f', '--config', metavar='<bestand>', help='gebruik dit configuratiebestand i.p.v. extract.conf')
     parser.add_argument('-q', '--query', metavar='<bestand>', help='voer database bewerkingen uit met opgegeven SQL bestand')
     parser.add_argument('-e', '--extract', metavar='<naam>', help='importeert of muteert de database met gegeven BAG-bestand of -directory')
-    parser.add_argument('-H', '--host', metavar='<hostnaam of -adres>', help='verbind met de database op deze host')
+    parser.add_argument('-H', '--host', metavar='<server>', help='Geef een geldig DNS of IP adres')
     parser.add_argument('-U', '--username', metavar='<naam>', help='verbind met database met deze gebruikersnaam')
     parser.add_argument('-p', '--port', metavar='<poort>', help='verbind met database naar deze poort')
-    parser.add_argument('-W', '--password', metavar='<paswoord>', help='gebruikt dit wachtwoord voor database gebruiker')
+    parser.add_argument('-W', '--password', metavar='<wachtwoord>', help='gebruikt dit wachtwoord voor database gebruiker')
     parser.add_argument('-w', '--no-password', action='store_true', help='gebruik geen wachtwoord voor de database verbinding')
     parser.add_argument('-v', '--verbose', action='store_true', help='toon uitgebreide informatie tijdens het verwerken')
 
@@ -68,14 +68,14 @@ def main():
     # Init globale configuratie
     from bagconfig import BAGConfig
     myconfig = BAGConfig(args)
-    
+
     if args.verbose:
         myconfig.logger.setLevel(logging.DEBUG)
     else:
         myconfig.logger.setLevel(logging.INFO)
-    
-    
-        
+
+
+
     if args.dbinit:
         mydb = myconfig.get_database()
         mydb.maak_database()
@@ -95,8 +95,8 @@ def main():
     else:
         sys.stdout.write("      Type -h of --help voor een overzicht van parameters\n")
 
-    
+
     sys.exit()
-    
+
 if __name__ == "__main__":
     main()
